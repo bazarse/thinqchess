@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThinQ Chess - Tournament Coming Soon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.min.js"></script>
+    <style>
+        /* Custom styles for white placeholder text */
+        .white-placeholder::placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+        .white-placeholder::-webkit-input-placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+        .white-placeholder::-moz-placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+        .white-placeholder:-ms-input-placeholder {
+            color: white !important;
+            opacity: 1;
+        }
+        
+        /* Background gradient */
+        .bg-gradient-chess {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-chess">
+    <div class="relative min-h-screen overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23000000" fill-opacity="0.1"><rect width="30" height="30"/><rect x="30" y="30" width="30" height="30"/></g></g></svg>'); background-size: 60px 60px;"></div>
+        </div>
+
+        <div class="relative z-10 container mx-auto px-4 pt-24 pb-16">
+            <!-- Header -->
+            <div class="text-center mb-16 mt-8 fade-in">
+                <h1 class="text-5xl md:text-7xl font-bold text-[#2B3AA0] mb-6">
+                    🏆 Coming Soon
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+                    Get ready for the <span class="text-[#FFB31A] font-bold">biggest chess tournament</span> of the year!
+                    We're preparing something extraordinary for our chess community.
+                </p>
+            </div>
+
+            <!-- Countdown Timer -->
+            <div class="text-center mb-16 slide-up">
+                <h2 class="text-2xl md:text-3xl font-bold text-[#2B3AA0] mb-8">
+                    ⏰ Tournament Registration Opens In:
+                </h2>
+                
+                <div class="flex justify-center gap-4 md:gap-8" id="countdown">
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-[#FFB31A]">
+                        <div class="text-3xl md:text-5xl font-bold text-[#2B3AA0]" id="days">30</div>
+                        <div class="text-sm md:text-base text-gray-600 capitalize font-medium">days</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-[#FFB31A]">
+                        <div class="text-3xl md:text-5xl font-bold text-[#2B3AA0]" id="hours">00</div>
+                        <div class="text-sm md:text-base text-gray-600 capitalize font-medium">hours</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-[#FFB31A]">
+                        <div class="text-3xl md:text-5xl font-bold text-[#2B3AA0]" id="minutes">00</div>
+                        <div class="text-sm md:text-base text-gray-600 capitalize font-medium">minutes</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border-2 border-[#FFB31A]">
+                        <div class="text-3xl md:text-5xl font-bold text-[#2B3AA0]" id="seconds">00</div>
+                        <div class="text-sm md:text-base text-gray-600 capitalize font-medium">seconds</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tournament Highlights -->
+            <div class="grid md:grid-cols-2 gap-8 mb-16 slide-up">
+                <div class="bg-white rounded-xl shadow-lg p-8 border-l-4 border-[#2B3AA0]">
+                    <h3 class="text-2xl font-bold text-[#2B3AA0] mb-6 flex items-center">
+                        🎯 Tournament Highlights
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">Age-wise categories (Under 8, 10, 12, 16, Open)</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">FIDE-rated tournament games</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">Cash prizes and trophies for winners</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">Professional arbiters and equipment</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">Live streaming and commentary</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#FFB31A] mt-1">✓</span>
+                            <span class="text-gray-700">Certificates for all participants</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8 border-l-4 border-[#FFB31A]">
+                    <h3 class="text-2xl font-bold text-[#2B3AA0] mb-6 flex items-center">
+                        📚 Prepare While You Wait
+                    </h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Practice tactical combinations daily</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Study endgame patterns</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Analyze grandmaster games</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Join our regular coaching sessions</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Solve chess puzzles</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-[#2B3AA0] mt-1">🎯</span>
+                            <span class="text-gray-700">Book a demo class with our experts</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Email Subscription -->
+            <div class="bg-gradient-to-r from-[#2B3AA0] to-[#4b57a3] rounded-xl shadow-lg p-8 text-center text-white mb-12 slide-up">
+                <h3 class="text-2xl md:text-3xl font-bold mb-4">
+                    🔔 Be the First to Know!
+                </h3>
+                <p class="text-lg mb-6 opacity-90">
+                    Get notified the moment tournament registration opens
+                </p>
+                
+                <div id="email-form">
+                    <form class="max-w-md mx-auto flex gap-3" onsubmit="handleEmailSubmit(event)">
+                        <input
+                            type="email"
+                            id="email-input"
+                            placeholder="Enter your email address"
+                            required
+                            class="flex-1 px-4 py-3 rounded-lg text-white white-placeholder focus:outline-none focus:ring-2 focus:ring-[#FFB31A] bg-transparent border border-white/30"
+                        />
+                        <button
+                            type="submit"
+                            class="bg-[#FFB31A] hover:bg-[#e6a117] px-6 py-3 rounded-lg font-bold text-white transition-colors duration-300"
+                        >
+                            Notify Me
+                        </button>
+                    </form>
+                </div>
+                
+                <div id="success-message" class="text-[#FFB31A] text-lg font-bold hidden">
+                    ✅ Thank you! We'll notify you when registration opens.
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center mb-12 slide-up">
+                <a
+                    href="#"
+                    class="bg-[#FFB31A] hover:bg-[#e6a117] text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                    onclick="alert('Demo class booking will be available soon!')"
+                >
+                    Book a Demo Class
+                </a>
+                <a
+                    href="#"
+                    class="bg-[#2B3AA0] hover:bg-[#1e2a70] text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                    onclick="alert('Curriculum details will be available soon!')"
+                >
+                    View Curriculum
+                </a>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="text-center slide-up">
+                <h4 class="text-xl font-bold text-[#2B3AA0] mb-4">
+                    Questions? We're Here to Help!
+                </h4>
+                <div class="flex flex-col md:flex-row gap-4 justify-center items-center text-gray-700">
+                    <a href="tel:+917975820187" class="flex items-center gap-2 hover:text-[#2B3AA0] transition-colors">
+                        📞 Phone: +91 7975820187
+                    </a>
+                    <a href="mailto:admin@thinqchess.com" class="flex items-center gap-2 hover:text-[#2B3AA0] transition-colors">
+                        ✉️ Email: admin@thinqchess.com
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Countdown Timer
+        function updateCountdown() {
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 30); // 30 days from now
+            
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+            
+            if (distance > 0) {
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                document.getElementById('days').textContent = days.toString().padStart(2, '0');
+                document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+                document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+                document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+            }
+        }
+        
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // Initial call
+        
+        // Email form handler
+        function handleEmailSubmit(event) {
+            event.preventDefault();
+            const email = document.getElementById('email-input').value;
+            if (email) {
+                document.getElementById('email-form').classList.add('hidden');
+                document.getElementById('success-message').classList.remove('hidden');
+                // Here you can add API call to save email
+                console.log('Email submitted:', email);
+            }
+        }
+        
+        // Add animation delays
+        setTimeout(() => {
+            document.querySelectorAll('.slide-up').forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.2}s`;
+            });
+        }, 100);
+    </script>
+</body>
+</html>

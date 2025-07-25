@@ -1,0 +1,414 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const DiscountCodes = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [discountCodes, setDiscountCodes] = useState([
+    { id: 1, code: 'TC10', discount_percent: 10, usage_limit: 50, used_count: 12, is_active: true },
+    { id: 2, code: 'TC20', discount_percent: 20, usage_limit: 30, used_count: 8, is_active: true },
+    { id: 3, code: 'TCON15', discount_percent: 15, usage_limit: 100, used_count: 25, is_active: true },
+    { id: 4, code: 'STUDENT25', discount_percent: 25, usage_limit: 200, used_count: 45, is_active: true },
+    { id: 5, code: 'EARLY20', discount_percent: 20, usage_limit: 75, used_count: 18, is_active: false }
+  ]);
+  const [newCode, setNewCode] = useState({
+    code: '',
+    discount_percent: '',
+    usage_limit: '',
+    is_active: true,
+    code_type: 'manual'
+  });
+  const [prefixCode, setPrefixCode] = useState({
+    prefix: '',
+    discount_percent: '',
+    usage_limit: '',
+    email_domain: '',
+    is_active: true
+  });
+  const [message, setMessage] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/admin/verify');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        router.push('/admin');
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      router.push('/admin');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddCode = () => {
+    if (!newCode.code || !newCode.discount_percent || !newCode.usage_limit) {
+      setMessage("Please fill all fields");
+      return;
+    }
+
+    const code = {
+      id: Date.now(),
+      code: newCode.code.toUpperCase(),
+      discount_percent: parseFloat(newCode.discount_percent),
+      usage_limit: parseInt(newCode.usage_limit),
+      used_count: 0,
+      is_active: newCode.is_active,
+      code_type: 'manual'
+    };
+
+    setDiscountCodes(prev => [...prev, code]);
+    setNewCode({ code: '', discount_percent: '', usage_limit: '', is_active: true, code_type: 'manual' });
+    setMessage("Discount code added successfully!");
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const handleAddPrefixCode = () => {
+    if (!prefixCode.prefix || !prefixCode.discount_percent || !prefixCode.usage_limit || !prefixCode.email_domain) {
+      setMessage("Please fill all fields for prefix-based coupon");
+      return;
+    }
+
+    const code = {
+      id: Date.now(),
+      code: `${prefixCode.prefix}*`, // * indicates it's a prefix
+      discount_percent: parseFloat(prefixCode.discount_percent),
+      usage_limit: parseInt(prefixCode.usage_limit),
+      used_count: 0,
+      is_active: prefixCode.is_active,
+      code_type: 'prefix',
+      prefix: prefixCode.prefix,
+      email_domain: prefixCode.email_domain
+    };
+
+    setDiscountCodes(prev => [...prev, code]);
+    setPrefixCode({ prefix: '', discount_percent: '', usage_limit: '', email_domain: '', is_active: true });
+    setMessage("Prefix-based discount code added successfully!");
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const generateCouponForEmail = (email) => {
+    // Find prefix codes that match the email domain
+    const emailDomain = email.split('@')[1];
+    const matchingPrefixCode = discountCodes.find(code =>
+      code.code_type === 'prefix' &&
+      code.email_domain === emailDomain &&
+      code.is_active
+    );
+
+    if (matchingPrefixCode) {
+      // Generate unique coupon code
+      const timestamp = Date.now().toString().slice(-6);
+      const emailPrefix = email.split('@')[0].slice(0, 3).toUpperCase();
+      return `${matchingPrefixCode.prefix}${emailPrefix}${timestamp}`;
+    }
+
+    return null;
+  };
+
+  const toggleCodeStatus = (id) => {
+    setDiscountCodes(prev => 
+      prev.map(code => 
+        code.id === id ? { ...code, is_active: !code.is_active } : code
+      )
+    );
+  };
+
+  const deleteCode = (id) => {
+    if (confirm("Are you sure you want to delete this discount code?")) {
+      setDiscountCodes(prev => prev.filter(code => code.id !== id));
+      setMessage("Discount code deleted successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/login', { method: 'DELETE' });
+      router.push('/admin');
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/admin');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3AA0] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <a href="/admin/dashboard" className="text-[#2B3AA0] hover:text-[#FFB31A] mr-4">
+                ← Dashboard
+              </a>
+              <h1 className="text-2xl font-bold text-[#2B3AA0]">Discount Codes</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto py-6 sm:px-6 lg:px-8">
+        {/* Add New Code */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-bold text-[#2B3AA0] mb-4">🎫 Add New Discount Code</h2>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Code</label>
+              <input
+                type="text"
+                value={newCode.code}
+                onChange={(e) => setNewCode(prev => ({ ...prev, code: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="NEWCODE"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
+              <input
+                type="number"
+                value={newCode.discount_percent}
+                onChange={(e) => setNewCode(prev => ({ ...prev, discount_percent: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="10"
+                min="1"
+                max="100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
+              <input
+                type="number"
+                value={newCode.usage_limit}
+                onChange={(e) => setNewCode(prev => ({ ...prev, usage_limit: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="100"
+                min="1"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handleAddCode}
+                className="w-full bg-[#2B3AA0] hover:bg-[#1e2a70] text-white px-4 py-3 rounded-lg font-medium transition-colors"
+              >
+                Add Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Prefix-Based Email Coupons */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">📧 Prefix-Based Email Coupons</h2>
+          <p className="text-gray-600 mb-4">
+            Create discount codes that are automatically generated for users with specific email domains.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Prefix</label>
+              <input
+                type="text"
+                value={prefixCode.prefix}
+                onChange={(e) => setPrefixCode(prev => ({ ...prev, prefix: e.target.value.toUpperCase() }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="STUDENT"
+                maxLength="10"
+              />
+              <p className="text-xs text-gray-500 mt-1">e.g., STUDENT, TEACHER</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email Domain</label>
+              <input
+                type="text"
+                value={prefixCode.email_domain}
+                onChange={(e) => setPrefixCode(prev => ({ ...prev, email_domain: e.target.value.toLowerCase() }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="gmail.com"
+              />
+              <p className="text-xs text-gray-500 mt-1">e.g., gmail.com, edu.in</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
+              <input
+                type="number"
+                value={prefixCode.discount_percent}
+                onChange={(e) => setPrefixCode(prev => ({ ...prev, discount_percent: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="15"
+                min="1"
+                max="100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
+              <input
+                type="number"
+                value={prefixCode.usage_limit}
+                onChange={(e) => setPrefixCode(prev => ({ ...prev, usage_limit: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                placeholder="50"
+                min="1"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handleAddPrefixCode}
+                className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
+              >
+                Add Prefix Code
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+            <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Users with matching email domains get auto-generated coupon codes</li>
+              <li>• Example: STUDENT prefix + user@gmail.com = STUDENTUSE123456</li>
+              <li>• Codes are unique and generated when user enters their email</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Existing Codes */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900">Existing Discount Codes</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Code
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Discount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Usage
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {discountCodes.map((code) => (
+                  <tr key={code.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{code.code}</div>
+                      {code.code_type === 'prefix' && code.email_domain && (
+                        <div className="text-xs text-gray-500">Domain: {code.email_domain}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        code.code_type === 'prefix'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {code.code_type === 'prefix' ? 'Email Prefix' : 'Manual'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{code.discount_percent}%</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {code.used_count} / {code.usage_limit}
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${(code.used_count / code.usage_limit) * 100}%` }}
+                        ></div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        code.is_active 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {code.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => toggleCodeStatus(code.id)}
+                        className={`mr-2 px-3 py-1 rounded text-xs ${
+                          code.is_active 
+                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                            : 'bg-green-100 text-green-800 hover:bg-green-200'
+                        }`}
+                      >
+                        {code.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => deleteCode(code.id)}
+                        className="px-3 py-1 bg-red-100 text-red-800 rounded text-xs hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Success/Error Message */}
+        {message && (
+          <div className={`mt-4 p-3 rounded-lg ${
+            message.includes('successfully') 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-red-100 text-red-800'
+          }`}>
+            {message}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default DiscountCodes;
