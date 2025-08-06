@@ -71,7 +71,7 @@ export async function GET(request) {
   try {
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
-    
+
     // Get query parameters
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'all';
@@ -168,8 +168,8 @@ export async function GET(request) {
     params.push(limit, offset);
 
     // Execute queries
-    const requests = db.prepare(query).all(...params);
-    const totalResult = db.prepare(countQuery).all(...params.slice(0, -2)); // Remove limit and offset for count
+    const requests = await db.prepare(query).all(...params);
+    const totalResult = await db.prepare(countQuery).all(...params.slice(0, -2)); // Remove limit and offset for count
     const total = totalResult[0].total;
 
     // Calculate pagination info
@@ -216,7 +216,7 @@ export async function PUT(request) {
     const db = getDB();
 
     // Check if demo request exists
-    const existing = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existing = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
     if (!existing) {
       return NextResponse.json(
         { error: 'Demo request not found' },
@@ -226,13 +226,12 @@ export async function PUT(request) {
 
     // Update demo request
     const updateStmt = db.prepare(`
-      UPDATE demo_requests 
-      SET demo_completed = ?, status = ?, updated_at = CURRENT_TIMESTAMP 
+      UPDATE demo_requests
+      SET status = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
 
-    const result = updateStmt.run(
-      demo_completed !== undefined ? (demo_completed ? 1 : 0) : existing.demo_completed,
+    const result = await updateStmt.run(
       status || existing.status,
       id
     );
@@ -245,7 +244,7 @@ export async function PUT(request) {
     }
 
     // Get updated demo request
-    const updated = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const updated = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
 
     return NextResponse.json({
       success: true,

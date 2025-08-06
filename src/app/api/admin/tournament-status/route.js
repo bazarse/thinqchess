@@ -7,13 +7,14 @@ export async function GET() {
     // Auto-update tournament status first
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
-    updateTournamentStatus(db);
+    await updateTournamentStatus(db);
 
-    // Get active and upcoming tournaments from SQLite
+    // Get active and upcoming tournaments from PostgreSQL
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
     // Get active tournaments (currently running)
-    const activeTournaments = getTournamentsByStatus('active').filter(tournament => {
+    const activeTournamentsResult = await db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY start_date DESC').all('active');
+    const activeTournaments = activeTournamentsResult.filter(tournament => {
       return tournament.start_date <= currentDate && tournament.end_date >= currentDate;
     });
 

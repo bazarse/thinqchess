@@ -7,26 +7,26 @@ export async function GET(request) {
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit')) || 50;
     
-    // Get gallery images from SQLite
+    // Get gallery images from PostgreSQL
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
-    
-    let query = 'SELECT * FROM gallery_images';
+
+    let query = 'SELECT * FROM gallery_images WHERE is_active = true';
     let params = [];
-    
+
     if (category && category !== 'all') {
-      query += ' WHERE category = ?';
+      query += ' AND category = ?';
       params.push(category);
     }
-    
-    query += ' ORDER BY display_order ASC, uploaded_at DESC';
-    
+
+    query += ' ORDER BY created_at DESC';
+
     if (limit) {
       query += ' LIMIT ?';
       params.push(limit);
     }
-    
-    const images = db.prepare(query).all(...params);
+
+    const images = await db.prepare(query).all(...params);
     
     return NextResponse.json(images);
 

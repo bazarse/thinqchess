@@ -10,7 +10,7 @@ export async function GET(request, { params }) {
     const tournamentId = resolvedParams.id;
     
     // Get tournament details
-    const tournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    const tournament = await db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
     
     if (!tournament) {
       return NextResponse.json(

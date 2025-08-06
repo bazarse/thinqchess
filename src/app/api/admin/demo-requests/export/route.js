@@ -95,7 +95,7 @@ export async function GET(request) {
     query += ' ORDER BY created_at DESC';
 
     // Execute query
-    const requests = db.prepare(query).all(...params);
+    const requests = await db.prepare(query).all(...params);
 
     if (format === 'csv') {
       // Generate CSV

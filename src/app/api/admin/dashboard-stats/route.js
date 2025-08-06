@@ -28,7 +28,7 @@ export async function GET() {
     const pendingDemos = await db.prepare('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?').get('pending');
 
     // Get pending demo requests (last 5)
-    const pendingDemoRequests = db.prepare(`
+    const pendingDemoRequests = await db.prepare(`
       SELECT parent_name, child_name, email, age, message, created_at
       FROM demo_requests
       WHERE status = 'pending'

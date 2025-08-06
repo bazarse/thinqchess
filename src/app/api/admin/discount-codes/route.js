@@ -6,7 +6,7 @@ export async function GET() {
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
     
-    const discountCodes = db.prepare('SELECT * FROM discount_codes ORDER BY created_at DESC').all();
+    const discountCodes = await db.prepare('SELECT * FROM discount_codes ORDER BY created_at DESC').all();
     
     return NextResponse.json({
       success: true,

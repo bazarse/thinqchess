@@ -50,13 +50,13 @@ export async function GET(request) {
       const currentYear = new Date().getFullYear();
       if (ageFilter === 'child') {
         // Child: age <= 18 (born after currentYear - 18)
-        whereConditions.push(`(CAST(strftime('%Y', 'now') AS INTEGER) - CAST(strftime('%Y', dob) AS INTEGER)) <= 18`);
+        whereConditions.push(`(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM dob::date)) <= 18`);
       } else if (ageFilter === 'adult') {
         // Adult: age 19-65
-        whereConditions.push(`(CAST(strftime('%Y', 'now') AS INTEGER) - CAST(strftime('%Y', dob) AS INTEGER)) BETWEEN 19 AND 65`);
+        whereConditions.push(`(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM dob::date)) BETWEEN 19 AND 65`);
       } else if (ageFilter === 'senior') {
         // Senior: age > 65
-        whereConditions.push(`(CAST(strftime('%Y', 'now') AS INTEGER) - CAST(strftime('%Y', dob) AS INTEGER)) > 65`);
+        whereConditions.push(`(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM dob::date)) > 65`);
       }
     }
 
@@ -70,7 +70,7 @@ export async function GET(request) {
     params.push(limit, offset);
 
     // Execute query
-    const registrations = db.prepare(query).all(...params);
+    const registrations = await db.prepare(query).all(...params);
 
     // Get total count and revenue for pagination and stats
     let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations';
@@ -127,14 +127,14 @@ export async function GET(request) {
       }
     }
 
-    const totalResult = db.prepare(countQuery).get(...countParams);
+    const totalResult = await db.prepare(countQuery).get(...countParams);
     const total = totalResult.total;
     const totalRevenue = totalResult.total_revenue;
 
     // Get tournament categories for name lookup
     let categoryMap = {};
     if (tournamentId) {
-      const tournament = db.prepare('SELECT categories FROM tournaments WHERE id = ?').get(tournamentId);
+      const tournament = await db.prepare('SELECT categories FROM tournaments WHERE id = ?').get(tournamentId);
       if (tournament && tournament.categories) {
         try {
           const categories = JSON.parse(tournament.categories);

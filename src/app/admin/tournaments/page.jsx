@@ -44,11 +44,18 @@ const TournamentManagement = () => {
       const response = await fetch('/api/admin/tournaments');
       if (response.ok) {
         const data = await response.json();
-        setTournaments(data.tournaments);
+        console.log('API Response:', data); // Debug log
+        setTournaments(data.tournaments || []);
+      } else {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        setMessage(`Error loading tournaments: ${errorData.error || 'Unknown error'}`);
+        setTournaments([]);
       }
     } catch (error) {
       console.error('Error fetching tournaments:', error);
       setMessage('Error loading tournaments');
+      setTournaments([]);
     } finally {
       setLoading(false);
     }
@@ -115,10 +122,10 @@ const TournamentManagement = () => {
 
       if (data.success) {
         if (editingTournament) {
-          setTournaments(tournaments.map(t => t.id === editingTournament.id ? data.tournament : t));
+          setTournaments(Array.isArray(tournaments) ? tournaments.map(t => t.id === editingTournament.id ? data.tournament : t) : [data.tournament]);
           setMessage('Tournament updated successfully!');
         } else {
-          setTournaments([data.tournament, ...tournaments]);
+          setTournaments([data.tournament, ...(Array.isArray(tournaments) ? tournaments : [])]);
           setMessage('Tournament created successfully!');
         }
         
@@ -669,7 +676,7 @@ const TournamentManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {tournaments.map((tournament) => (
+                {Array.isArray(tournaments) && tournaments.map((tournament) => (
                   <tr key={tournament.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>

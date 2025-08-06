@@ -9,24 +9,24 @@ export async function GET() {
     // Get counts for different notification types
     
     // New tournament registrations (last 24 hours)
-    const newRegistrations = db.prepare(`
+    const newRegistrations = await db.prepare(`
       SELECT COUNT(*) as count
       FROM tournament_registrations
-      WHERE registered_at >= datetime('now', '-1 day')
+      WHERE registered_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'
     `).get();
 
-    // Pending demo requests (using course_registrations table)
-    const pendingDemos = db.prepare(`
+    // Pending demo requests
+    const pendingDemos = await db.prepare(`
       SELECT COUNT(*) as count
-      FROM course_registrations
-      WHERE type = 'demo' AND (status = 'pending' OR status IS NULL)
+      FROM demo_requests
+      WHERE status = 'pending'
     `).get();
 
     // Active tournaments needing attention
-    const activeTournaments = db.prepare(`
-      SELECT COUNT(*) as count 
-      FROM tournaments 
-      WHERE status = 'active' AND tournament_date >= date('now')
+    const activeTournaments = await db.prepare(`
+      SELECT COUNT(*) as count
+      FROM tournaments
+      WHERE status = 'active' AND start_date >= CURRENT_DATE
     `).get();
 
     const notifications = {
