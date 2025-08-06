@@ -55,7 +55,7 @@ export async function GET(request) {
     query += ' ORDER BY registered_at DESC';
 
     // Execute query
-    const registrations = await db.prepare(query).all(...params);
+    const registrations = db.prepare(query).all(...params);
 
     if (format === 'csv') {
       // Generate CSV with comprehensive headers

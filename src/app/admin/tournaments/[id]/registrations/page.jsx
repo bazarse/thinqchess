@@ -96,8 +96,7 @@ const TournamentRegistrations = () => {
 
     const headers = [
       'Name', 'Email', 'Phone', 'DOB', 'Age', 'Gender', 'FIDE ID', 'Category', 'Country', 'State', 'City',
-      'Address', 'Amount Paid', 'Discount Code', 'Discount Amount', 'Payment ID',
-      'Payment Status', 'Registration Date'
+      'Address', 'Registration Date'
     ];
 
     const csvContent = [
@@ -110,16 +109,11 @@ const TournamentRegistrations = () => {
         `"${reg.age || ''}"`,
         `"${reg.gender || ''}"`,
         `"${reg.fide_id || ''}"`,
-        `"${reg.tournament_type || ''}"`,
+        `"${reg.category_name || reg.tournament_type || ''}"`,
         `"${reg.country || ''}"`,
         `"${reg.state || ''}"`,
         `"${reg.city || ''}"`,
         `"${reg.address || ''}"`,
-        `"₹${reg.amount_paid}"`,
-        `"${reg.discount_code || ''}"`,
-        `"₹${reg.discount_amount || 0}"`,
-        `"${reg.payment_id || ''}"`,
-        `"${reg.payment_status}"`,
         `"${new Date(reg.registered_at).toLocaleDateString('en-GB')}"`
       ].join(','))
     ].join('\n');
@@ -293,7 +287,7 @@ const TournamentRegistrations = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {reg.tournament_type || 'N/A'}
+                        {reg.category_name || reg.tournament_type || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div>{reg.city}, {reg.state}</div>
@@ -388,7 +382,7 @@ const TournamentRegistrations = () => {
                   <h4 className="font-semibold text-gray-900 mb-3">Tournament Information</h4>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Tournament:</span> {tournament?.name || 'N/A'}</div>
-                    <div><span className="font-medium">Category:</span> {selectedRegistration.tournament_type || 'N/A'}</div>
+                    <div><span className="font-medium">Category:</span> {selectedRegistration.category_name || selectedRegistration.tournament_type || 'N/A'}</div>
                     <div><span className="font-medium">Tournament Date:</span> {(tournament?.start_date || tournament?.tournament_date) ? new Date(tournament.start_date || tournament.tournament_date).toLocaleDateString('en-GB') : 'N/A'}</div>
                     <div><span className="font-medium">Venue:</span> {tournament?.venue || 'N/A'}</div>
                   </div>
@@ -405,30 +399,7 @@ const TournamentRegistrations = () => {
                   </div>
                 </div>
 
-                {/* Payment Information */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-3">Payment Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Amount Paid:</span> ₹{selectedRegistration.amount_paid || 0}</div>
-                    <div><span className="font-medium">Payment Status:</span>
-                      <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                        selectedRegistration.payment_status === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {selectedRegistration.payment_status}
-                      </span>
-                    </div>
-                    {selectedRegistration.discount_code && (
-                      <>
-                        <div><span className="font-medium">Discount Code:</span> {selectedRegistration.discount_code}</div>
-                        <div><span className="font-medium">Discount Amount:</span> ₹{selectedRegistration.discount_amount || 0}</div>
-                      </>
-                    )}
-                    {selectedRegistration.payment_id && <div><span className="font-medium">Payment ID:</span> {selectedRegistration.payment_id}</div>}
-                    {selectedRegistration.razorpay_order_id && <div><span className="font-medium">Razorpay Order ID:</span> {selectedRegistration.razorpay_order_id}</div>}
-                  </div>
-                </div>
+
 
                 {/* Registration Details */}
                 <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
@@ -525,7 +496,7 @@ const TournamentRegistrations = () => {
                             </div>
                             <div class="detail-row">
                               <span class="detail-label">Category:</span>
-                              <span class="detail-value">${selectedRegistration.tournament_type || 'N/A'}</span>
+                              <span class="detail-value">${selectedRegistration.category_name || selectedRegistration.tournament_type || 'N/A'}</span>
                             </div>
                             <div class="detail-row">
                               <span class="detail-label">Tournament Date:</span>
@@ -559,43 +530,7 @@ const TournamentRegistrations = () => {
                             ` : ''}
                           </div>
 
-                          <div class="section">
-                            <h3>Payment Information</h3>
-                            <div class="detail-row">
-                              <span class="detail-label">Amount Paid:</span>
-                              <span class="detail-value">₹${selectedRegistration.amount_paid || 0}</span>
-                            </div>
-                            <div class="detail-row">
-                              <span class="detail-label">Payment Status:</span>
-                              <span class="detail-value">
-                                <span class="${selectedRegistration.payment_status === 'completed' ? 'status-completed' : 'status-pending'}">
-                                  ${selectedRegistration.payment_status}
-                                </span>
-                              </span>
-                            </div>
-                            ${selectedRegistration.discount_code ? `
-                            <div class="detail-row">
-                              <span class="detail-label">Discount Code:</span>
-                              <span class="detail-value">${selectedRegistration.discount_code}</span>
-                            </div>
-                            <div class="detail-row">
-                              <span class="detail-label">Discount Amount:</span>
-                              <span class="detail-value">₹${selectedRegistration.discount_amount || 0}</span>
-                            </div>
-                            ` : ''}
-                            ${selectedRegistration.payment_id ? `
-                            <div class="detail-row">
-                              <span class="detail-label">Payment ID:</span>
-                              <span class="detail-value">${selectedRegistration.payment_id}</span>
-                            </div>
-                            ` : ''}
-                            ${selectedRegistration.razorpay_order_id ? `
-                            <div class="detail-row">
-                              <span class="detail-label">Razorpay Order ID:</span>
-                              <span class="detail-value">${selectedRegistration.razorpay_order_id}</span>
-                            </div>
-                            ` : ''}
-                          </div>
+
 
                           <div class="section">
                             <h3>Registration Details</h3>

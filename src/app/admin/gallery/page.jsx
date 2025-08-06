@@ -140,9 +140,21 @@ const GalleryManagement = () => {
   };
 
   const extractYouTubeId = (url) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    // Enhanced regex to support YouTube Shorts
+    const patterns = [
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/,
+      /youtube\.com\/shorts\/([^"&?\/\s]{11})/,
+      /youtu\.be\/([^"&?\/\s]{11})/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1] && match[1].length === 11) {
+        return match[1];
+      }
+    }
+
+    return null;
   };
 
   const handleDeleteItem = async (id, type) => {
@@ -225,7 +237,7 @@ const GalleryManagement = () => {
             onClick={() => setShowVideoModal(true)}
             className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
           >
-            📹 Add YouTube Video
+            📹 Add YouTube Video/Short
           </button>
           <button
             onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
@@ -496,6 +508,79 @@ const GalleryManagement = () => {
           </div>
         )}
       </div>
+
+      {/* YouTube Video Modal */}
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Add YouTube Video/Short</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Video Title
+                </label>
+                <input
+                  type="text"
+                  value={videoData.title}
+                  onChange={(e) => setVideoData({...videoData, title: e.target.value})}
+                  placeholder="Enter video title"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  YouTube URL
+                </label>
+                <input
+                  type="url"
+                  value={videoData.youtube_url}
+                  onChange={(e) => setVideoData({...videoData, youtube_url: e.target.value})}
+                  placeholder="https://youtube.com/watch?v=... or https://youtube.com/shorts/..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Supports regular YouTube videos and YouTube Shorts
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  value={videoData.category}
+                  onChange={(e) => setVideoData({...videoData, category: e.target.value})}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="uncategorized">Uncategorized</option>
+                  <option value="tournaments">Tournaments</option>
+                  <option value="classes">Classes</option>
+                  <option value="events">Events</option>
+                  <option value="academy">Academy</option>
+                  <option value="shorts">YouTube Shorts</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowVideoModal(false);
+                    setVideoData({ title: '', youtube_url: '', category: 'uncategorized' });
+                  }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVideoUpload}
+                  disabled={uploading || !videoData.title || !videoData.youtube_url}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploading ? 'Adding...' : 'Add Video'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
   );

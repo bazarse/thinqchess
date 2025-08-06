@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    // Save demo request to PostgreSQL
+    // Save demo request to SQLite
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
 
@@ -21,15 +21,15 @@ export async function POST(request) {
       }
     }
 
-    // Insert demo request into PostgreSQL
+    // Insert demo request into SQLite
     const insertStmt = db.prepare(`
       INSERT INTO demo_requests (
         parent_name, email, phone, child_name, age, chess_experience,
         state, country, message, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    const result = await insertStmt.run(
+    const result = insertStmt.run(
       body.parent_name,
       body.email,
       body.phone,
@@ -43,7 +43,7 @@ export async function POST(request) {
     );
 
     // Get the created demo request
-    const savedRequest = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(result.lastInsertRowid);
+    const savedRequest = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(result.lastInsertRowid);
 
     console.log('✅ Demo Request Saved:', savedRequest);
 
@@ -168,8 +168,8 @@ export async function GET(request) {
     params.push(limit, offset);
 
     // Execute queries
-    const requests = await db.prepare(query).all(...params);
-    const totalResult = await db.prepare(countQuery).all(...params.slice(0, -2)); // Remove limit and offset for count
+    const requests = db.prepare(query).all(...params);
+    const totalResult = db.prepare(countQuery).all(...params.slice(0, -2)); // Remove limit and offset for count
     const total = totalResult[0].total;
 
     // Calculate pagination info
@@ -216,7 +216,7 @@ export async function PUT(request) {
     const db = getDB();
 
     // Check if demo request exists
-    const existing = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existing = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
     if (!existing) {
       return NextResponse.json(
         { error: 'Demo request not found' },
@@ -231,7 +231,7 @@ export async function PUT(request) {
       WHERE id = ?
     `);
 
-    const result = await updateStmt.run(
+    const result = updateStmt.run(
       status || existing.status,
       id
     );
@@ -244,7 +244,7 @@ export async function PUT(request) {
     }
 
     // Get updated demo request
-    const updated = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const updated = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
 
     return NextResponse.json({
       success: true,
@@ -255,11 +255,62 @@ export async function PUT(request) {
   } catch (error) {
     console.error('Error updating demo request:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Failed to update demo request',
-        details: error.message 
+        details: error.message
       },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete demo request
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Demo request ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const { getDB } = require('../../../../lib/database.js');
+    const db = getDB();
+
+    // Check if demo request exists
+    const existing = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Demo request not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the demo request
+    const result = db.prepare('DELETE FROM demo_requests WHERE id = ?').run(id);
+
+    if (result.changes === 0) {
+      return NextResponse.json(
+        { error: 'Failed to delete demo request' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ Demo request deleted successfully: ID ${id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Demo request deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Error deleting demo request:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete demo request' },
       { status: 500 }
     );
   }

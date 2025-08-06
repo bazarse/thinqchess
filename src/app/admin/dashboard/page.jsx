@@ -15,24 +15,44 @@ const AdminDashboard = () => {
   });
   const [pendingDemoRequests, setPendingDemoRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchDashboardStats();
+
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(fetchDashboardStats, 30000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchDashboardStats = async () => {
+  const fetchDashboardStats = async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+    }
+
     try {
       const response = await fetch('/api/admin/dashboard-stats');
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
         setPendingDemoRequests(data.pendingDemos || []);
+        setLastUpdated(new Date());
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     } finally {
       setLoading(false);
+      if (isManualRefresh) {
+        setRefreshing(false);
+      }
     }
+  };
+
+  const handleManualRefresh = () => {
+    fetchDashboardStats(true);
   };
 
   if (loading) {
@@ -48,8 +68,28 @@ const AdminDashboard = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-md p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
-        <p className="text-blue-100">Manage your ThinQ Chess platform efficiently</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
+            <p className="text-blue-100">Manage your ThinQ Chess platform efficiently</p>
+            {lastUpdated && (
+              <p className="text-blue-200 text-sm mt-2">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              refreshing
+                ? 'bg-blue-500 cursor-not-allowed'
+                : 'bg-white text-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            {refreshing ? '🔄 Refreshing...' : '🔄 Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}

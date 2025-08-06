@@ -118,11 +118,15 @@ const Tournaments = () => {
           }
 
           setTournamentTypes(categories);
+
           // Set first category as default
           if (categories.length > 0) {
-            setSelectedTournamentType(categories[0].id);
-            setTournamentFee(categories[0].fee);
-            setFinalAmount(categories[0].fee);
+            const firstCategory = categories[0];
+            const fee = parseFloat(firstCategory.fee) || 500; // Ensure fee is a number
+            setSelectedTournamentType(firstCategory.id);
+            setTournamentFee(fee);
+            setFinalAmount(fee);
+            setFormData((prev) => ({ ...prev, tournament_type: firstCategory.id }));
           }
 
           // Check if registration is open
@@ -247,15 +251,17 @@ const Tournaments = () => {
     setFormData((prev) => ({ ...prev, tournament_type: typeId }));
 
     // Update fee based on selected tournament type
-    const selectedType = tournamentTypes.find(type => type.id === typeId);
+    const selectedType = tournamentTypes.find(type => type.id == typeId); // Use == for loose comparison
+
     if (selectedType) {
-      setTournamentFee(selectedType.fee);
+      const fee = parseFloat(selectedType.fee) || 500; // Ensure fee is a number
+      setTournamentFee(fee);
       // Recalculate final amount with discount if applied
       if (discountData) {
-        const discountAmount = (selectedType.fee * discountData.discount_percent) / 100;
-        setFinalAmount(selectedType.fee - discountAmount);
+        const discountAmount = (fee * discountData.discount_percent) / 100;
+        setFinalAmount(fee - discountAmount);
       } else {
-        setFinalAmount(selectedType.fee);
+        setFinalAmount(fee);
       }
     }
   };
@@ -319,7 +325,7 @@ const Tournaments = () => {
 
       // Check age eligibility for selected tournament type
       if (selectedTournamentType && value) {
-        const selectedType = tournamentTypes.find(type => type.id === selectedTournamentType);
+        const selectedType = tournamentTypes.find(type => type.id == selectedTournamentType); // Use == for loose comparison
         if (selectedType && !isEligibleForTournamentType(value, selectedType)) {
           setErrorMessage(`Age not eligible for ${selectedType.name}. Please select appropriate tournament type.`);
         }
@@ -331,7 +337,7 @@ const Tournaments = () => {
   // Check if age is eligible for tournament type
   const isEligibleForTournamentType = (dob, tournamentType) => {
     if (!dob || !tournamentType) return true;
-    if (!tournamentType.age_min && !tournamentType.age_max) return true; // Open category
+    if (!tournamentType.min_age && !tournamentType.max_age) return true; // Open category
 
     const birthDate = new Date(dob);
     const today = new Date();
@@ -342,8 +348,8 @@ const Tournaments = () => {
       age--;
     }
 
-    if (tournamentType.age_min && age < tournamentType.age_min) return false;
-    if (tournamentType.age_max && age > tournamentType.age_max) return false;
+    if (tournamentType.min_age && age < parseInt(tournamentType.min_age)) return false;
+    if (tournamentType.max_age && age > parseInt(tournamentType.max_age)) return false;
 
     return true;
   };
@@ -691,8 +697,6 @@ const Tournaments = () => {
                 {/* No Tournaments Available */}
                 {status?.status === 'no_tournaments' && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                    <p className="text-lg text-gray-700 mb-8">No tournaments scheduled at the moment. Please check back later.</p>
-
                     <div className="text-5xl mb-4">🏆</div>
                     <h3 className="text-xl font-bold text-gray-800 mb-3">Tournaments are closed now</h3>
                     <p className="text-gray-700 mb-8">Please check back later for upcoming tournaments.</p>
@@ -1007,9 +1011,9 @@ const Tournaments = () => {
                     <option value="">Select Tournament Category</option>
                     {tournamentTypes.map((type) => (
                       <option key={type.id} value={type.id}>
-                        {type.name}
-                        {type.age_min || type.age_max ?
-                          ` (Age: ${type.age_min || 'Any'}-${type.age_max || 'Any'})` :
+                        {type.name} - ₹{type.fee}
+                        {type.min_age || type.max_age ?
+                          ` (Age: ${type.min_age || 'Any'}-${type.max_age || 'Any'})` :
                           ''
                         }
                       </option>

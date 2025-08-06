@@ -164,7 +164,7 @@ const RegistrationsView = () => {
   const deleteRegistration = async (registrationId) => {
     if (window.confirm('Are you sure you want to delete this registration? This action cannot be undone.')) {
       try {
-        const response = await fetch(`/api/admin/registrations/${registrationId}`, {
+        const response = await fetch(`/api/admin/registrations?id=${registrationId}`, {
           method: 'DELETE',
         });
 
@@ -580,9 +580,6 @@ const RegistrationsView = () => {
                   <h4 className="font-semibold text-gray-900 mb-3">Registration Details</h4>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Registration Date:</span> {new Date(selectedRegistration.registered_at).toLocaleString('en-GB')}</div>
-                    <div><span className="font-medium">Payment Status:</span> {selectedRegistration.payment_status}</div>
-                    <div><span className="font-medium">Amount Paid:</span> ₹{selectedRegistration.amount_paid || 0}</div>
-                    {selectedRegistration.payment_id && <div><span className="font-medium">Payment ID:</span> {selectedRegistration.payment_id}</div>}
                   </div>
                 </div>
               </div>

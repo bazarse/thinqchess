@@ -37,7 +37,10 @@ export async function GET() {
     `).all();
     
     // Calculate revenue (completed payments)
-    const totalRevenue = db.prepare('SELECT SUM(amount_paid) as total FROM tournament_registrations WHERE payment_status = ?').get('completed');
+    const totalRevenue = db.prepare('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?').get('completed') || { total: 0 };
+
+    // Get completed registrations count
+    const completedRegistrations = db.prepare('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?').get('completed') || { count: 0 };
     
     // Get registration stats by type
     const registrationsByType = db.prepare(`
@@ -49,7 +52,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       stats: {
-        totalRegistrations: totalRegistrations.count || 0,
+        totalRegistrations: completedRegistrations.count || 0, // Use completed registrations instead of all
         totalBlogs: totalBlogs.count || 0,
         publishedBlogs: publishedBlogs.count || 0,
         totalGalleryImages: totalGalleryImages.count || 0,

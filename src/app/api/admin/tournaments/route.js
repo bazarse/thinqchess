@@ -11,6 +11,8 @@ export async function GET() {
     const db = getDB();
     const tournaments = db.prepare('SELECT * FROM tournaments ORDER BY created_at DESC').all();
 
+    console.log('📋 Fetched tournaments:', tournaments.length, 'tournaments');
+
     return NextResponse.json({
       success: true,
       tournaments
@@ -79,6 +81,8 @@ export async function POST(request) {
     // Get the created tournament
     const newTournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
 
+    console.log('✅ Tournament created successfully:', newTournament);
+
     return NextResponse.json({
       success: true,
       message: 'Tournament created successfully',
@@ -119,11 +123,11 @@ export async function PUT(request) {
       );
     }
 
-    const { pool } = require('../../../../../lib/database.js');
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
     // Check if tournament exists
-    const existingResult = await pool.query('SELECT * FROM tournaments WHERE id = $1', [id]);
-    const existing = existingResult.rows[0];
+    const existing = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
     if (!existing) {
       return NextResponse.json(
         { error: 'Tournament not found' },
@@ -133,17 +137,17 @@ export async function PUT(request) {
 
     // If this tournament is being set as active, deactivate all others
     if (is_active) {
-      await pool.query('UPDATE tournaments SET is_active = false');
+      db.prepare('UPDATE tournaments SET is_active = 0').run();
     }
 
     // Update tournament
-    await pool.query(`
+    db.prepare(`
       UPDATE tournaments
-      SET name = $1, description = $2, start_date = $3, end_date = $4,
-          registration_start_date = $5, registration_end_date = $6, flyer_image = $7,
-          is_active = $8, categories = $9, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $10
-    `, [
+      SET name = ?, description = ?, start_date = ?, end_date = ?,
+          registration_start_date = ?, registration_end_date = ?, flyer_image = ?,
+          is_active = ?, categories = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
       name || existing.name,
       description !== undefined ? description : existing.description,
       tournament_date !== undefined ? tournament_date : (start_date !== undefined ? start_date : existing.start_date),
@@ -151,14 +155,13 @@ export async function PUT(request) {
       registration_start !== undefined ? registration_start : existing.registration_start_date,
       registration_end !== undefined ? registration_end : existing.registration_end_date,
       flyer_image !== undefined ? flyer_image : existing.flyer_image,
-      is_active !== undefined ? (is_active ? true : false) : existing.is_active,
+      is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
       categories !== undefined ? categories : existing.categories,
       id
-    ]);
+    );
 
     // Get updated tournament
-    const updatedResult = await pool.query('SELECT * FROM tournaments WHERE id = $1', [id]);
-    const updatedTournament = updatedResult.rows[0];
+    const updatedTournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
 
     return NextResponse.json({
       success: true,
@@ -179,7 +182,7 @@ export async function PUT(request) {
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const id = parseInt(searchParams.get('id'));
 
     if (!id) {
       return NextResponse.json(
@@ -188,11 +191,11 @@ export async function DELETE(request) {
       );
     }
 
-    const { pool } = require('../../../../../lib/database.js');
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
     // Check if tournament exists
-    const existingResult = await pool.query('SELECT * FROM tournaments WHERE id = $1', [id]);
-    const existing = existingResult.rows[0];
+    const existing = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
     if (!existing) {
       return NextResponse.json(
         { error: 'Tournament not found' },
@@ -201,12 +204,17 @@ export async function DELETE(request) {
     }
 
     try {
-      // Delete related registrations first (PostgreSQL handles foreign keys automatically)
-      await pool.query('DELETE FROM registrations WHERE tournament_id = $1', [id]);
-      await pool.query('DELETE FROM tournament_registrations WHERE tournament_id = $1', [id]);
+      console.log(`🗑️ Deleting tournament with ID: ${id}`);
+
+      // Delete related registrations first
+      db.prepare('DELETE FROM registrations WHERE tournament_id = ?').run(id);
+      db.prepare('DELETE FROM tournament_registrations WHERE tournament_id = ?').run(id);
 
       // Delete tournament
-      await pool.query('DELETE FROM tournaments WHERE id = $1', [id]);
+      const result = db.prepare('DELETE FROM tournaments WHERE id = ?').run(id);
+
+      console.log(`✅ Tournament ${id} deleted successfully. Rows affected: ${result.changes}`);
+
     } catch (deleteError) {
       console.error('Error during deletion:', deleteError);
       throw deleteError;

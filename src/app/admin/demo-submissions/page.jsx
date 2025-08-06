@@ -30,6 +30,12 @@ const DemoSubmissionsPage = () => {
   useEffect(() => {
     if (user) {
       fetchDemoRequests();
+
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(fetchDemoRequests, 30000);
+
+      // Cleanup interval on component unmount
+      return () => clearInterval(interval);
     }
   }, [user, filter, searchTerm, dateFilter, customDateFrom, customDateTo, currentPage]);
 
@@ -250,7 +256,7 @@ const DemoSubmissionsPage = () => {
     try {
       setDeleting(true);
 
-      const response = await fetch(`/api/demo-request/${requestToDelete.id}`, {
+      const response = await fetch(`/api/demo-request?id=${requestToDelete.id}`, {
         method: 'DELETE',
       });
 

@@ -18,7 +18,7 @@ export async function DELETE(request, { params }) {
     console.log('🗑️ Deleting demo request with ID:', id);
 
     // Check if the demo request exists
-    const existingRequest = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existingRequest = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
 
     if (!existingRequest) {
       return NextResponse.json(
@@ -29,7 +29,7 @@ export async function DELETE(request, { params }) {
 
     // Delete the demo request
     const deleteStmt = db.prepare('DELETE FROM demo_requests WHERE id = ?');
-    const result = await deleteStmt.run(id);
+    const result = deleteStmt.run(id);
 
     if (result.changes === 0) {
       return NextResponse.json(
@@ -72,7 +72,7 @@ export async function GET(request, { params }) {
     console.log('📋 Fetching demo request with ID:', id);
 
     // Get the demo request
-    const request = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const request = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
     
     if (!request) {
       return NextResponse.json(

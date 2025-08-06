@@ -4,8 +4,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    // Save tournament registration to PostgreSQL
-    const { pool } = require('../../../../../lib/database.js');
+    // Save tournament registration to SQLite
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
     
     // Validate required fields (using form field names)
     const requiredFields = ['particpantFirstName', 'particpantLastName', 'mail_id', 'phone_no'];
@@ -33,16 +34,19 @@ export async function POST(request) {
       return age;
     };
 
-    const result = await pool.query(`
+    // Get the active tournament to ensure proper linking
+    const activeTournament = db.prepare('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1').get();
+    const tournamentId = body.tournament_id || (activeTournament ? activeTournament.id : null);
+
+    const result = db.prepare(`
       INSERT INTO tournament_registrations (
         tournament_id, participant_first_name, participant_middle_name, participant_last_name,
         email, phone, dob, gender, age, tournament_type, fide_id,
         country, country_code, state, city, address, amount_paid, discount_code,
         discount_amount, payment_id, razorpay_order_id, payment_status, type
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
-      RETURNING id
-    `, [
-      body.tournament_id || null,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      tournamentId,
       body.particpantFirstName,
       body.particpantMiddleName || null,
       body.particpantLastName,
@@ -65,15 +69,14 @@ export async function POST(request) {
       body.razorpay_order_id || null,
       body.payment_status || 'pending',
       'tournament'
-    ]);
+    );
 
     // Get the created registration
-    const savedRegistrationResult = await pool.query('SELECT * FROM tournament_registrations WHERE id = $1', [result.rows[0].id]);
-    const savedRegistration = savedRegistrationResult.rows[0];
+    const savedRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(result.lastInsertRowid);
 
     // Update discount code usage if used
     if (body.discount_code) {
-      await pool.query('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = $1', [body.discount_code]);
+      db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ?').run(body.discount_code);
     }
 
     console.log('✅ Tournament Registration Saved:', savedRegistration);

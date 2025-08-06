@@ -3,14 +3,14 @@ import { initializeDatabase } from '../../../../lib/database.js';
 
 export async function GET() {
   try {
-    console.log('🧪 Testing PostgreSQL database connection...');
-    
+    console.log('🧪 Testing SQLite database connection...');
+
     // Initialize database
-    await initializeDatabase();
-    
+    initializeDatabase();
+
     return NextResponse.json({
       success: true,
-      message: 'PostgreSQL database connection successful!',
+      message: 'SQLite database connection successful!',
       timestamp: new Date().toISOString()
     });
 

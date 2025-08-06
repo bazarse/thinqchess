@@ -36,7 +36,13 @@ const TournamentManagement = () => {
 
   useEffect(() => {
     fetchTournaments();
-  }, []); // Empty dependency array - run only once on mount
+
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(fetchTournaments, 30000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchTournaments = async () => {
     try {
@@ -122,14 +128,14 @@ const TournamentManagement = () => {
 
       if (data.success) {
         if (editingTournament) {
-          setTournaments(Array.isArray(tournaments) ? tournaments.map(t => t.id === editingTournament.id ? data.tournament : t) : [data.tournament]);
           setMessage('Tournament updated successfully!');
         } else {
-          setTournaments([data.tournament, ...(Array.isArray(tournaments) ? tournaments : [])]);
           setMessage('Tournament created successfully!');
         }
-        
+
         resetForm();
+        // Refresh tournaments list to ensure sync
+        await fetchTournaments();
         setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage(data.error || 'Failed to save tournament');
@@ -180,19 +186,47 @@ const TournamentManagement = () => {
   };
 
   const addCategory = () => {
-    if (newCategory.name && newCategory.fee && newCategory.slots) {
-      setNewTournament(prev => ({
-        ...prev,
-        categories: [...prev.categories, { ...newCategory, id: Date.now() }]
-      }));
-      setNewCategory({
-        name: '',
-        fee: '',
-        min_age: '',
-        max_age: '',
-        slots: ''
-      });
+    if (!newCategory.name.trim()) {
+      setMessage('Please enter category name');
+      setTimeout(() => setMessage(''), 3000);
+      return;
     }
+    if (!newCategory.fee || newCategory.fee <= 0) {
+      setMessage('Please enter valid fee amount');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+    if (!newCategory.slots || newCategory.slots <= 0) {
+      setMessage('Please enter valid number of slots');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    // Check if category name already exists
+    const existingCategory = newTournament.categories.find(cat =>
+      cat.name.toLowerCase() === newCategory.name.toLowerCase()
+    );
+    if (existingCategory) {
+      setMessage('Category with this name already exists');
+      setTimeout(() => setMessage(''), 3000);
+      return;
+    }
+
+    setNewTournament(prev => ({
+      ...prev,
+      categories: [...prev.categories, { ...newCategory, id: Date.now() }]
+    }));
+
+    setNewCategory({
+      name: '',
+      fee: '',
+      min_age: '',
+      max_age: '',
+      slots: ''
+    });
+
+    setMessage(`Category "${newCategory.name}" added successfully!`);
+    setTimeout(() => setMessage(''), 3000);
   };
 
   const removeCategory = (categoryId) => {
@@ -274,7 +308,7 @@ const TournamentManagement = () => {
         `"${reg.phone}"`,
         `"${reg.dob || ''}"`,
         `"${reg.gender || ''}"`,
-        `"${reg.tournament_type || ''}"`,
+        `"${reg.category_name || reg.tournament_type || ''}"`,
         `"${reg.country || ''}"`,
         `"${reg.state || ''}"`,
         `"${reg.city || ''}"`,
@@ -297,13 +331,24 @@ const TournamentManagement = () => {
     const tournament = tournaments.find(t => t.id === id);
     if (!tournament) return;
 
+    // If activating a tournament, check if there are other active tournaments
+    if (!tournament.is_active) {
+      const activeTournaments = tournaments.filter(t => t.is_active && t.id !== id);
+      if (activeTournaments.length > 0) {
+        const confirmMessage = `Activating this tournament will deactivate the following active tournament(s):\n\n${activeTournaments.map(t => `• ${t.name}`).join('\n')}\n\nDo you want to continue?`;
+        if (!window.confirm(confirmMessage)) {
+          return;
+        }
+      }
+    }
+
     try {
-      const response = await fetch('/api/admin/tournaments', {
-        method: 'PUT',
+      const response = await fetch(`/api/admin/tournaments/${tournament.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: tournament.id,
-          is_active: !tournament.is_active
+          status: tournament.status || 'upcoming',
+          is_active: !tournament.is_active ? 1 : 0
         }),
       });
 
@@ -321,7 +366,7 @@ const TournamentManagement = () => {
   };
 
   const markTournamentAsEnded = async (tournamentId) => {
-    if (window.confirm('Are you sure you want to mark this tournament as ended? It will be moved to past tournaments.')) {
+    if (window.confirm('⚠️ DEMO PURPOSE ONLY: This manual completion is for testing past tournaments.\n\nIn production, tournaments automatically move to past section when their date ends.\n\nDo you want to mark this tournament as completed for demo purposes?')) {
       try {
         const response = await fetch(`/api/admin/tournaments/${tournamentId}`, {
           method: 'PATCH',
@@ -348,21 +393,30 @@ const TournamentManagement = () => {
   };
 
   const deleteTournament = async (id) => {
-    if (confirm('Are you sure you want to delete this tournament?')) {
+    if (confirm('Are you sure you want to delete this tournament? This will also delete all related registrations.')) {
       try {
+        console.log('Deleting tournament with ID:', id);
         const response = await fetch(`/api/admin/tournaments?id=${id}`, {
           method: 'DELETE',
         });
 
+        console.log('Delete response status:', response.status);
         const data = await response.json();
+        console.log('Delete response data:', data);
+
         if (data.success) {
-          setTournaments(tournaments.filter(t => t.id !== id));
+          // Refresh tournaments list instead of filtering locally
+          await fetchTournaments();
           setMessage('Tournament deleted successfully!');
           setTimeout(() => setMessage(''), 3000);
+        } else {
+          setMessage(data.error || 'Failed to delete tournament');
+          setTimeout(() => setMessage(''), 5000);
         }
       } catch (error) {
         console.error('Error deleting tournament:', error);
-        setMessage('Error deleting tournament');
+        setMessage('Error deleting tournament: ' + error.message);
+        setTimeout(() => setMessage(''), 5000);
       }
     }
   };
@@ -432,13 +486,15 @@ const TournamentManagement = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tournament Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tournament Date {!editingTournament && '*'}
+                </label>
                 <input
                   type="date"
                   value={newTournament.tournament_date}
                   onChange={(e) => setNewTournament({...newTournament, tournament_date: e.target.value})}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  required={!editingTournament}
                 />
               </div>
             </div>
@@ -687,10 +743,29 @@ const TournamentManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {tournament.tournament_type}
+                      {(() => {
+                        try {
+                          const categories = tournament.categories ? JSON.parse(tournament.categories) : [];
+                          if (categories.length === 0) return 'Open Category';
+                          if (categories.length === 1) return categories[0].name;
+                          return `${categories.length} Categories`;
+                        } catch (e) {
+                          return 'Open Category';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{tournament.fee}
+                      {(() => {
+                        try {
+                          const categories = tournament.categories ? JSON.parse(tournament.categories) : [];
+                          if (categories.length === 0) return '₹500';
+                          if (categories.length === 1) return `₹${categories[0].fee}`;
+                          const fees = categories.map(cat => cat.fee).filter((fee, index, arr) => arr.indexOf(fee) === index);
+                          return fees.length === 1 ? `₹${fees[0]}` : `₹${Math.min(...fees.map(f => parseInt(f)))}-${Math.max(...fees.map(f => parseInt(f)))}`;
+                        } catch (e) {
+                          return '₹500';
+                        }
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

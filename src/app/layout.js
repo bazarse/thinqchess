@@ -88,6 +88,22 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
       <head>
+        {/* Suppress Antd React version warning */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined') {
+                const originalError = console.error;
+                console.error = function(...args) {
+                  if (args[0] && typeof args[0] === 'string' && args[0].includes('antd v5 support React is 16 ~ 18')) {
+                    return; // Suppress this specific warning
+                  }
+                  originalError.apply(console, args);
+                };
+              }
+            `,
+          }}
+        />
         {/* Fonts & Icons */}
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"

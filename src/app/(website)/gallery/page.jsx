@@ -79,16 +79,16 @@ const GalleryPage = () => {
         {/* Gallery Images */}
         {images.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {images.map((image) => (
+            {images.map((item) => (
               <div
-                key={image.id}
+                key={item.id}
                 className="group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
-                onClick={() => openModal(image)}
+                onClick={() => openModal(item)}
               >
                 <div className="aspect-video overflow-hidden relative">
                   <Image
-                    src={image.image_url}
-                    alt={image.image_name}
+                    src={item.image_url}
+                    alt={item.image_name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -98,14 +98,37 @@ const GalleryPage = () => {
                       e.target.src = '/images/chess-placeholder.jpg';
                     }}
                   />
+                  {/* Video Play Button Overlay */}
+                  {item.type === 'video' && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
+                      <div className="w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-red-600 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {/* Shorts Badge */}
+                  {item.category === 'shorts' && (
+                    <div className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      Shorts
+                    </div>
+                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 group-hover:text-[#2B3AA0] transition-colors">
-                    {image.image_name}
+                    {item.image_name}
                   </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {image.uploaded_at ? new Date(image.uploaded_at).toLocaleDateString() : 'Recent'}
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-sm text-gray-500">
+                      {item.uploaded_at ? new Date(item.uploaded_at).toLocaleDateString() : 'Recent'}
+                    </p>
+                    {item.type === 'video' && (
+                      <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                        {item.category === 'shorts' ? 'Short' : 'Video'}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -127,36 +150,69 @@ const GalleryPage = () => {
 
       </section>
 
-      {/* Modal for Image Preview */}
+      {/* Modal for Image/Video Preview */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           onClick={closeModal}
         >
-          <div className="relative max-w-4xl max-h-full">
+          <div className="relative max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={closeModal}
-              className="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300 transition-colors"
+              className="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300 transition-colors z-10"
             >
               ✕
             </button>
-            <img
-              src={selectedImage.image_url}
-              alt={selectedImage.image_name}
-              className="max-w-full max-h-full object-contain rounded-lg"
-              onError={(e) => {
-                e.target.src = '/images/chess-placeholder.jpg';
-              }}
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-6">
-              <h3 className="text-xl font-bold">{selectedImage.image_name}</h3>
-              <p className="text-sm opacity-75">
-                {selectedImage.uploaded_at ? 
-                  new Date(selectedImage.uploaded_at).toLocaleDateString() : 
-                  'ThinQ Chess Academy'
-                }
-              </p>
-            </div>
+
+            {selectedImage.type === 'video' && selectedImage.youtube_id ? (
+              // YouTube Video/Short Embed
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <iframe
+                  src={`https://www.youtube.com/embed/${selectedImage.youtube_id}?autoplay=1&rel=0`}
+                  title={selectedImage.image_name}
+                  className="w-full h-[60vh] md:h-[70vh]"
+                  style={{ minWidth: '320px', minHeight: '240px' }}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-6">
+                  <h3 className="text-xl font-bold">{selectedImage.image_name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-sm bg-red-600 px-2 py-1 rounded-full">
+                      {selectedImage.category === 'shorts' ? 'YouTube Short' : 'YouTube Video'}
+                    </span>
+                    <p className="text-sm opacity-75">
+                      {selectedImage.uploaded_at ?
+                        new Date(selectedImage.uploaded_at).toLocaleDateString() :
+                        'ThinQ Chess Academy'
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Regular Image
+              <>
+                <img
+                  src={selectedImage.image_url}
+                  alt={selectedImage.image_name}
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.src = '/images/chess-placeholder.jpg';
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent text-white p-6">
+                  <h3 className="text-xl font-bold">{selectedImage.image_name}</h3>
+                  <p className="text-sm opacity-75">
+                    {selectedImage.uploaded_at ?
+                      new Date(selectedImage.uploaded_at).toLocaleDateString() :
+                      'ThinQ Chess Academy'
+                    }
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

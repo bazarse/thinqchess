@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SimpleImageUpload from "../../../components/SimpleImageUpload";
+import RichTextEditor from "../../../components/RichTextEditor";
 
 const BlogManagement = () => {
   const [user, setUser] = useState(null);
@@ -234,11 +235,10 @@ const BlogManagement = () => {
               {/* Content */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Blog Content</label>
-                <textarea
+                <RichTextEditor
                   value={blogForm.content}
-                  onChange={(e) => setBlogForm(prev => ({ ...prev, content: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0] h-64 resize-none"
-                  placeholder="Write your blog content here..."
+                  onChange={(content) => setBlogForm(prev => ({ ...prev, content }))}
+                  placeholder="Write your blog content here... Use the toolbar to add formatting, images, and videos."
                 />
               </div>
 

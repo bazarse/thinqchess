@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import SupabaseImageUpload from "../../../components/SupabaseImageUpload";
+import RichTextEditor from "../../../components/RichTextEditor";
 
 
 const BlogManagement = () => {
@@ -402,13 +403,10 @@ const BlogManagement = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
-              <textarea
+              <RichTextEditor
                 value={newPost.content}
-                onChange={(e) => setNewPost({...newPost, content: e.target.value})}
-                rows={12}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
-                placeholder="Write your blog post content here..."
-                required
+                onChange={(content) => setNewPost({...newPost, content})}
+                placeholder="Write your blog post content here... Use the toolbar to add formatting, images, and videos."
               />
             </div>
 

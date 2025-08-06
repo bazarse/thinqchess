@@ -9,27 +9,28 @@ export async function GET() {
     // Get counts for different notification types
     
     // New tournament registrations (last 24 hours)
-    const newRegistrations = await db.prepare(`
+    const newRegistrations = db.prepare(`
       SELECT COUNT(*) as count
       FROM tournament_registrations
-      WHERE registered_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'
+      WHERE registered_at >= datetime('now', '-1 day')
     `).get();
 
     // Pending demo requests
-    const pendingDemos = await db.prepare(`
+    const pendingDemos = db.prepare(`
       SELECT COUNT(*) as count
       FROM demo_requests
       WHERE status = 'pending'
     `).get();
 
     // Active tournaments needing attention
-    const activeTournaments = await db.prepare(`
+    const activeTournaments = db.prepare(`
       SELECT COUNT(*) as count
       FROM tournaments
-      WHERE status = 'active' AND start_date >= CURRENT_DATE
+      WHERE is_active = 1
     `).get();
 
     const notifications = {
+      success: true,
       tournaments: activeTournaments?.count || 0,
       registrations: newRegistrations?.count || 0,
       demos: pendingDemos?.count || 0,
@@ -45,6 +46,7 @@ export async function GET() {
     
     // Return default values on error
     return NextResponse.json({
+      success: false,
       tournaments: 0,
       registrations: 0,
       demos: 0,

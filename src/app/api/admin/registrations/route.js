@@ -21,6 +21,10 @@ export async function GET(request) {
     let params = [];
     let whereConditions = [];
 
+    // Only show completed payments
+    whereConditions.push('payment_status = ?');
+    params.push('completed');
+
     // Filter by type
     if (filter !== 'all') {
       whereConditions.push('type = ?');
@@ -30,7 +34,7 @@ export async function GET(request) {
     // Filter by tournament ID
     if (tournamentId) {
       whereConditions.push('tournament_id = ?');
-      params.push(tournamentId);
+      params.push(parseInt(tournamentId)); // Convert to integer
     }
 
     // Search functionality
@@ -66,18 +70,30 @@ export async function GET(request) {
     }
 
     // Add ordering and pagination
-    query += ' ORDER BY registered_at DESC LIMIT ? OFFSET ?';
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
     // Execute query
-    const registrations = await db.prepare(query).all(...params);
+    console.log('🔍 Main Query:', query);
+    console.log('🔍 Main Params:', params);
 
-    // Get total count and revenue for pagination and stats
-    let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations';
-    let countParams = [];
+    // First, let's check if ANY records exist in the table
+    const allRecords = await db.prepare('SELECT COUNT(*) as count FROM tournament_registrations').get();
+    console.log('🔍 Total records in tournament_registrations table:', allRecords.count);
+
+    // Check records with payment_status = 'completed'
+    const completedRecords = await db.prepare('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?').get('completed');
+    console.log('🔍 Completed payment records:', completedRecords.count);
+
+    const registrations = await db.prepare(query).all(...params);
+    console.log('🔍 Main Query Results:', registrations.length, 'records found');
+
+    // Get total count and revenue for pagination and stats (only completed payments)
+    let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations WHERE payment_status = ?';
+    let countParams = ['completed'];
 
     if (filter !== 'all') {
-      countQuery += ' WHERE type = ?';
+      countQuery += ' AND type = ?';
       countParams.push(filter);
     }
 
@@ -88,7 +104,7 @@ export async function GET(request) {
       } else {
         countQuery += ' WHERE tournament_id = ?';
       }
-      countParams.push(tournamentId);
+      countParams.push(parseInt(tournamentId)); // Convert to integer
     }
     
     if (search) {
@@ -133,33 +149,61 @@ export async function GET(request) {
 
     // Get tournament categories for name lookup
     let categoryMap = {};
+    let tournamentMap = {};
+
     if (tournamentId) {
-      const tournament = await db.prepare('SELECT categories FROM tournaments WHERE id = ?').get(tournamentId);
-      if (tournament && tournament.categories) {
-        try {
-          const categories = JSON.parse(tournament.categories);
-          console.log('🏆 Tournament Categories:', categories);
-          categories.forEach(cat => {
-            categoryMap[cat.id] = cat.name;
-            // Also map string version of ID
-            categoryMap[cat.id.toString()] = cat.name;
-          });
-          console.log('🗺️ Category Map:', categoryMap);
-        } catch (error) {
-          console.error('Error parsing tournament categories:', error);
+      // Get specific tournament
+      const tournament = await db.prepare('SELECT id, name, categories FROM tournaments WHERE id = ?').get(tournamentId);
+      if (tournament) {
+        tournamentMap[tournament.id] = tournament;
+        if (tournament.categories) {
+          try {
+            const categories = JSON.parse(tournament.categories);
+            console.log('🏆 Tournament Categories:', categories);
+            categories.forEach(cat => {
+              categoryMap[cat.id] = cat.name;
+              categoryMap[cat.id.toString()] = cat.name;
+            });
+            console.log('🗺️ Category Map:', categoryMap);
+          } catch (error) {
+            console.error('Error parsing tournament categories:', error);
+          }
         }
       }
+    } else {
+      // Get all tournaments for comprehensive mapping
+      const tournaments = await db.prepare('SELECT id, name, categories FROM tournaments').all();
+      tournaments.forEach(tournament => {
+        tournamentMap[tournament.id] = tournament;
+        if (tournament.categories) {
+          try {
+            const categories = JSON.parse(tournament.categories);
+            categories.forEach(cat => {
+              categoryMap[cat.id] = cat.name;
+              categoryMap[cat.id.toString()] = cat.name;
+            });
+          } catch (error) {
+            console.error('Error parsing tournament categories:', error);
+          }
+        }
+      });
+      console.log('🗺️ Global Category Map:', categoryMap);
     }
 
     // Add computed fields
     const enrichedRegistrations = registrations.map(reg => {
-      console.log('🔍 Processing registration:', reg.tournament_type);
+      console.log('🔍 Processing registration:', reg.tournament_type, 'Tournament ID:', reg.tournament_id);
       console.log('🔍 Category map lookup:', categoryMap[reg.tournament_type]);
+
+      const tournament = tournamentMap[reg.tournament_id];
+      const categoryName = categoryMap[reg.tournament_type] || categoryMap[reg.tournament_type?.toString()] || reg.tournament_type || 'N/A';
 
       return {
         ...reg,
         participant_name: `${reg.participant_first_name} ${reg.participant_last_name}`,
-        category_name: categoryMap[reg.tournament_type] || categoryMap[reg.tournament_type?.toString()] || reg.tournament_type || 'N/A'
+        category_name: categoryName,
+        tournament_name: tournament ? tournament.name : 'Unknown Tournament',
+        registered_at: reg.created_at // Ensure we have the registration date
       };
     });
 

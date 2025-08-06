@@ -4,44 +4,22 @@ import { useRouter, usePathname } from "next/navigation";
 
 export default function AdminLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState({
-    tournaments: 0,
-    registrations: 0,
-    demos: 0,
-    total: 0
-  });
+
   const router = useRouter();
   const pathname = usePathname();
 
   const navItems = [
     { href: "/admin/dashboard", label: "Dashboard", icon: "■" },
-    { href: "/admin/tournaments", label: "Tournaments", icon: "🏆", count: notifications.tournaments },
-    { href: "/admin/registrations", label: "Registrations", icon: "👤", count: notifications.registrations },
-    { href: "/admin/demo-submissions", label: "Demo Submissions", icon: "📋", count: notifications.demos },
+    { href: "/admin/tournaments", label: "Tournaments", icon: "🏆" },
+    { href: "/admin/registrations", label: "Registrations", icon: "👤" },
+    { href: "/admin/demo-submissions", label: "Demo Submissions", icon: "📋" },
     { href: "/admin/discount-codes", label: "Discount Codes", icon: "%" },
     { href: "/admin/gallery", label: "Gallery", icon: "□" },
     { href: "/admin/blogs", label: "Blog", icon: "✎" },
     { href: "/admin/settings", label: "Settings", icon: "⚙️" },
   ];
 
-  useEffect(() => {
-    fetchNotifications();
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch('/api/admin/notifications');
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    }
-  };
 
   const handleLogout = () => {
     // Clear any stored auth tokens
@@ -91,11 +69,6 @@ export default function AdminLayout({ children }) {
                 >
                   <span className="text-sm">{item.icon}</span>
                   <span>{item.label}</span>
-                  {item.count > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {item.count > 99 ? '99+' : item.count}
-                    </span>
-                  )}
                 </button>
               ))}
               
@@ -137,11 +110,6 @@ export default function AdminLayout({ children }) {
                     <span className="text-sm">{item.icon}</span>
                     <span>{item.label}</span>
                   </div>
-                  {item.count > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {item.count > 99 ? '99+' : item.count}
-                    </span>
-                  )}
                 </button>
               ))}
               

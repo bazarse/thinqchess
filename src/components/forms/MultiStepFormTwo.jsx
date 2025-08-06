@@ -362,10 +362,6 @@ const MultiStepFormTwo = () => {
         return false;
       }
       if (formData.mode === "Offline") {
-        if (!formData.coaching_city) {
-          setErrorMessage("Please select coaching city for offline classes");
-          return false;
-        }
         if (!formData.preferredCentre) {
           setErrorMessage("Please select preferred centre for offline classes");
           return false;
@@ -1178,11 +1174,8 @@ const MultiStepFormTwo = () => {
                 className="w-full p-2 mt-3 border border-[#d3d1d1] rounded "
               >
                 <option value="">Select Preferred Centre *</option>
-                {centers.map((centre, i) => (
-                  <option key={i} value={centre}>
-                    {centre}
-                  </option>
-                ))}
+                <option value="JP Nagar, 8th Phase">JP Nagar, 8th Phase</option>
+                <option value="Akshayanagar">Akshayanagar</option>
               </select>
             )}
 
