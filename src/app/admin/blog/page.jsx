@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import SupabaseImageUpload from "../../../components/SupabaseImageUpload";
+import SimpleImageUpload from "../../../components/SimpleImageUpload";
 import RichTextEditor from "../../../components/RichTextEditor";
 
 
@@ -391,7 +391,7 @@ const BlogManagement = () => {
                   </button>
                 </div>
               )}
-              <SupabaseImageUpload
+              <SimpleImageUpload
                 uploadType="blog"
                 blogSlug={newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled'}
                 onUploadComplete={handleImageUpload}
