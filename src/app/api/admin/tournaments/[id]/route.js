@@ -3,14 +3,14 @@ import { NextResponse } from 'next/server';
 // GET - Fetch specific tournament
 export async function GET(request, { params }) {
   try {
-    const { getDB } = require('../../../../../../lib/database.js');
-    const db = getDB();
+    const { pool } = require('../../../../../../lib/database.js');
 
     const resolvedParams = await params;
     const tournamentId = resolvedParams.id;
-    
+
     // Get tournament details
-    const tournament = await db.prepare('SELECT * FROM tournaments WHERE id = ?').get(tournamentId);
+    const result = await pool.query('SELECT * FROM tournaments WHERE id = $1', [tournamentId]);
+    const tournament = result.rows[0];
     
     if (!tournament) {
       return NextResponse.json(
@@ -36,23 +36,20 @@ export async function GET(request, { params }) {
 // PATCH - Update tournament status
 export async function PATCH(request, { params }) {
   try {
-    const { getDB } = require('../../../../../../lib/database.js');
-    const db = getDB();
+    const { pool } = require('../../../../../../lib/database.js');
 
     const resolvedParams = await params;
     const tournamentId = resolvedParams.id;
     const body = await request.json();
 
     // Update tournament status
-    const updateStmt = db.prepare(`
+    const result = await pool.query(`
       UPDATE tournaments
-      SET status = ?, is_active = ?, updated_at = datetime('now')
-      WHERE id = ?
-    `);
+      SET status = $1, is_active = $2, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+    `, [body.status, body.is_active, tournamentId]);
 
-    const result = updateStmt.run(body.status, body.is_active, tournamentId);
-
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return NextResponse.json(
         { error: 'Tournament not found' },
         { status: 404 }

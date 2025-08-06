@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getTournamentsByStatus, getAllTournaments } from '../../../../../lib/sqlite-operations.js';
 import { updateTournamentStatus } from '../../../../lib/tournament-utils.js';
 
 export async function GET() {
@@ -19,12 +18,13 @@ export async function GET() {
     });
 
     // Get upcoming tournaments (registration not started yet)
-    const upcomingTournaments = getTournamentsByStatus('upcoming').filter(tournament => {
+    const upcomingTournamentsAll = await db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY start_date DESC').all('upcoming');
+    const upcomingTournaments = upcomingTournamentsAll.filter(tournament => {
       return tournament.registration_start_date > currentDate;
     }).sort((a, b) => new Date(a.registration_start_date) - new Date(b.registration_start_date));
 
     // Get tournaments with open registration (registration period active)
-    const openRegistrationTournaments = getTournamentsByStatus('upcoming').filter(tournament => {
+    const openRegistrationTournaments = upcomingTournamentsAll.filter(tournament => {
       return tournament.registration_start_date <= currentDate && tournament.registration_end_date >= currentDate;
     });
 

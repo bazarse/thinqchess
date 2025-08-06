@@ -4,23 +4,24 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 // GET - Fetch active tournament for frontend
 export async function GET() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const { pool } = require('../../../../../lib/database.js');
 
     // Auto-update tournament status first
-    updateTournamentStatus(db);
+    await updateTournamentStatus();
 
     // Get the active tournament
-    const activeTournament = db.prepare('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1').get();
+    const result = await pool.query('SELECT * FROM tournaments WHERE is_active = true LIMIT 1');
+    const activeTournament = result.rows[0];
     
     if (!activeTournament) {
       // Check for upcoming tournaments
-      const upcomingTournament = db.prepare(`
+      const upcomingResult = await pool.query(`
         SELECT * FROM tournaments
-        WHERE start_date > datetime('now')
+        WHERE start_date > CURRENT_TIMESTAMP
         ORDER BY start_date ASC
         LIMIT 1
-      `).get();
+      `);
+      const upcomingTournament = upcomingResult.rows[0];
 
       if (upcomingTournament) {
         const startDate = new Date(upcomingTournament.start_date);
@@ -76,11 +77,12 @@ export async function GET() {
     }
 
     // Get current registration count
-    const registrationCount = db.prepare(
-      'SELECT COUNT(*) as count FROM tournament_registrations WHERE tournament_id = ?'
-    ).get(activeTournament.id);
+    const registrationCountResult = await pool.query(
+      'SELECT COUNT(*) as count FROM tournament_registrations WHERE tournament_id = $1',
+      [activeTournament.id]
+    );
 
-    const currentRegistrations = registrationCount ? registrationCount.count : 0;
+    const currentRegistrations = registrationCountResult.rows[0] ? parseInt(registrationCountResult.rows[0].count) : 0;
     
     // Check if tournament is full
     if (activeTournament.max_participants && currentRegistrations >= activeTournament.max_participants) {
