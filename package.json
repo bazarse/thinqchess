@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbo",
+    "dev:fast": "next dev --turbo --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "analyze": "cross-env ANALYZE=true next build",
+    "clean": "node clear-cache.js",
+    "fresh": "npm run clean && npm run dev",
     "build:analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
@@ -17,13 +20,18 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
+    "@supabase/supabase-js": "^2.53.0",
     "@vercel/postgres": "^0.10.0",
     "antd": "^5.24.9",
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.2.0",
     "classnames": "^2.5.1",
     "country-state-city": "^3.2.1",
     "critters": "^0.0.23",
+    "dotenv": "^17.2.1",
     "emailjs-com": "^3.2.0",
+    "firebase": "^10.7.1",
+    "firebase-admin": "^12.0.0",
     "framer-motion": "^12.9.4",
     "gray-matter": "^4.0.3",
     "jsonwebtoken": "^9.0.2",
@@ -36,7 +44,8 @@
     "react-phone-input-2": "^2.15.1",
     "react-select": "^5.10.1",
     "remark": "^15.0.1",
-    "remark-html": "^16.0.1"
+    "remark-html": "^16.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

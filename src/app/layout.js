@@ -135,13 +135,13 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning={true}
       >
         <ThemeRegistry>
-          <RouterOptimizer />
-          {/* Custom Cursor */}
-          <span className="max-md:hidden">
+          {/* <RouterOptimizer /> */}
+          {/* Custom Cursor - Temporarily disabled for testing */}
+          {/* <span className="max-md:hidden">
             <ClientOnly>
               <CustomCursor />
             </ClientOnly>
-          </span>
+          </span> */}
 
           {children}
         </ThemeRegistry>

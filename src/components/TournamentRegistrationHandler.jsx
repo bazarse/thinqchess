@@ -18,7 +18,7 @@ const TournamentRegistrationHandler = ({ children }) => {
 
   const fetchTournamentStatus = async () => {
     try {
-      const response = await fetch('/api/tournament-status');
+      const response = await fetch('/api/admin/tournament-status');
       if (response.ok) {
         const data = await response.json();
         setStatus(data);

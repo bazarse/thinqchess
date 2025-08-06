@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { amount } = body;
+    const { amount, currency = 'INR' } = body;
 
     if (!amount || amount <= 0) {
       return NextResponse.json(
@@ -12,15 +12,20 @@ export async function POST(request) {
       );
     }
 
-    // Development mode - simulate order creation
+    // Use Razorpay test mode for development
+    console.log('🎯 Creating Razorpay Order:', { amount, currency });
+
+    // Demo mode for development (since we don't have real Razorpay keys)
     if (process.env.DEVELOPMENT_MODE === 'true') {
+      console.log('🎯 Demo Mode: Creating mock Razorpay order');
+
       const mockOrder = {
-        id: `order_${Date.now()}`,
+        id: `order_demo_${Date.now()}`,
         entity: 'order',
-        amount: amount * 100, // Razorpay expects amount in paise
+        amount: amount * 100, // Amount in paise
         amount_paid: 0,
         amount_due: amount * 100,
-        currency: 'INR',
+        currency: currency,
         receipt: `receipt_${Date.now()}`,
         status: 'created',
         created_at: Math.floor(Date.now() / 1000),
@@ -30,28 +35,26 @@ export async function POST(request) {
         }
       };
 
-      console.log('🎯 Mock Razorpay Order Created:', mockOrder);
-
       return NextResponse.json({
         success: true,
         order: mockOrder,
-        key: 'rzp_test_demo_key', // Demo key for development
-        message: 'Order created successfully (development mode)'
+        key: 'rzp_test_demo_key',
+        message: 'Demo order created successfully'
       });
     }
 
-    // Production mode - real Razorpay integration
+    // Real Razorpay integration (for production)
     try {
       const Razorpay = (await import('razorpay')).default;
 
       const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID,
+        key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
       });
 
       const options = {
         amount: amount * 100, // Amount in paise
-        currency: 'INR',
+        currency: currency,
         receipt: `receipt_${Date.now()}`,
         notes: {
           purpose: 'Tournament Registration',
@@ -64,7 +67,7 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         order: order,
-        key: process.env.RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         message: 'Order created successfully'
       });
 
@@ -104,23 +107,76 @@ export async function PUT(request) {
         signature: razorpay_signature
       });
 
-      // Simulate saving registration data
-      const registrationData = {
-        id: Date.now(),
-        ...formData,
-        payment_id: razorpay_payment_id,
-        order_id: razorpay_order_id,
-        payment_status: 'completed',
-        registered_at: new Date().toISOString(),
-        type: 'tournament'
+      // Save registration data to SQLite database
+      const { getDB } = require('../../../../lib/database.js');
+      const db = getDB();
+
+      // Calculate age from DOB
+      const calculateAge = (dob) => {
+        if (!dob) return null;
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        return age;
       };
 
-      console.log('🎯 Tournament Registration Saved:', registrationData);
+      // Insert tournament registration into SQLite
+      const insertStmt = db.prepare(`
+        INSERT INTO tournament_registrations (
+          tournament_id, participant_first_name, participant_middle_name, participant_last_name,
+          email, phone, dob, gender, age, tournament_type, fide_id,
+          country, country_code, state, city, address, amount_paid, discount_code,
+          discount_amount, payment_id, razorpay_order_id, payment_status, type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const result = insertStmt.run(
+        formData.tournament_id || null,
+        formData.particpantFirstName,
+        formData.particpantMiddleName || null,
+        formData.particpantLastName,
+        formData.mail_id,
+        formData.phone_no,
+        formData.dob || null,
+        formData.gender || null,
+        calculateAge(formData.dob),
+        formData.tournament_type || 'open',
+        formData.fidaID || null,
+        formData.country || null,
+        formData.country_code || null,
+        formData.state || null,
+        formData.city || null,
+        formData.location || null,
+        parseFloat(formData.amount_paid) || 0,
+        formData.discount_code || null,
+        parseFloat(formData.discount_amount) || 0,
+        razorpay_payment_id,
+        razorpay_order_id,
+        'completed',
+        'tournament'
+      );
+
+      // Get the created registration
+      const savedRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(result.lastInsertRowid);
+
+      // Update discount code usage if used
+      if (formData.discount_code) {
+        db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ?').run(formData.discount_code);
+      }
+
+      console.log('🎯 Tournament Registration Saved:', savedRegistration);
 
       return NextResponse.json({
         success: true,
         message: 'Payment verified and registration completed (development mode)',
-        registration: registrationData
+        registration: {
+          ...savedRegistration,
+          participant_name: `${savedRegistration.participant_first_name} ${savedRegistration.participant_last_name}`
+        }
       });
     }
 
@@ -135,23 +191,74 @@ export async function PUT(request) {
         .digest('hex');
 
       if (expected_signature === razorpay_signature) {
-        // Save registration data to database
-        const { saveTournamentRegistration } = await import('../../../lib/db.js');
+        // Save registration data to SQLite database
+        const { getDB } = require('../../../../lib/database.js');
+        const db = getDB();
 
-        const registrationData = {
-          ...formData,
-          payment_id: razorpay_payment_id,
-          order_id: razorpay_order_id,
-          payment_status: 'completed',
-          type: 'tournament'
+        // Calculate age from DOB
+        const calculateAge = (dob) => {
+          if (!dob) return null;
+          const birthDate = new Date(dob);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return age;
         };
 
-        const savedRegistration = await saveTournamentRegistration(registrationData);
+        // Insert tournament registration into SQLite
+        const insertStmt = db.prepare(`
+          INSERT INTO tournament_registrations (
+            tournament_id, participant_first_name, participant_middle_name, participant_last_name,
+            email, phone, dob, gender, age, tournament_type, fide_id,
+            country, country_code, state, city, address, amount_paid, discount_code,
+            discount_amount, payment_id, razorpay_order_id, payment_status, type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        const result = insertStmt.run(
+          formData.tournament_id || null,
+          formData.particpantFirstName,
+          formData.particpantMiddleName || null,
+          formData.particpantLastName,
+          formData.mail_id,
+          formData.phone_no,
+          formData.dob || null,
+          formData.gender || null,
+          calculateAge(formData.dob),
+          formData.tournament_type || 'open',
+          formData.fidaID || null,
+          formData.country || null,
+          formData.country_code || null,
+          formData.state || null,
+          formData.city || null,
+          formData.location || null,
+          parseFloat(formData.amount_paid) || 0,
+          formData.discount_code || null,
+          parseFloat(formData.discount_amount) || 0,
+          razorpay_payment_id,
+          razorpay_order_id,
+          'completed',
+          'tournament'
+        );
+
+        // Get the created registration
+        const savedRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(result.lastInsertRowid);
+
+        // Update discount code usage if used
+        if (formData.discount_code) {
+          db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ?').run(formData.discount_code);
+        }
 
         return NextResponse.json({
           success: true,
           message: 'Payment verified and registration completed',
-          registration: savedRegistration
+          registration: {
+            ...savedRegistration,
+            participant_name: `${savedRegistration.participant_first_name} ${savedRegistration.participant_last_name}`
+          }
         });
       } else {
         return NextResponse.json(

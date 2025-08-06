@@ -12,50 +12,28 @@ export async function POST(request) {
       );
     }
 
-    // Development mode - simulate discount codes
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const mockDiscounts = {
-        'TC10': 10,
-        'TC20': 20,
-        'TCON15': 15,
-        'STUDENT25': 25,
-        'EARLY20': 20
-      };
+    // Validate discount code using SQLite
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-      const discountPercent = mockDiscounts[code.toUpperCase()];
-
-      if (!discountPercent) {
-        return NextResponse.json(
-          {
-            valid: false,
-            error: 'Invalid or expired discount code'
-          },
-          { status: 400 }
-        );
-      }
-
-      const discountAmount = (parseFloat(amount) * discountPercent) / 100;
-      const finalAmount = parseFloat(amount) - discountAmount;
-
-      return NextResponse.json({
-        valid: true,
-        discount_percent: discountPercent,
-        discount_amount: discountAmount,
-        final_amount: finalAmount,
-        original_amount: parseFloat(amount),
-        code: code.toUpperCase()
-      });
-    }
-
-    // Production mode with database
-    const { validateDiscountCode } = await import('../../../../../lib/db.js');
-    const discountData = await validateDiscountCode(code.toUpperCase());
+    const discountData = db.prepare('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1').get(code.toUpperCase());
 
     if (!discountData) {
       return NextResponse.json(
         {
           valid: false,
           error: 'Invalid or expired discount code'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check usage limit
+    if (discountData.used_count >= discountData.usage_limit) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'Discount code usage limit exceeded'
         },
         { status: 400 }
       );

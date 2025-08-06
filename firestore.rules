@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Admin users collection - only admins can access
+    match /admin_users/{adminId} {
+      allow read, write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Tournament registrations - public read, authenticated write
+    match /tournament_registrations/{registrationId} {
+      allow read: if true; // Public read for displaying counts
+      allow create: if request.auth != null || 
+        (request.resource.data.payment_status == 'completed'); // Allow creation with payment
+      allow update, delete: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Admin settings - admin only
+    match /admin_settings/{settingId} {
+      allow read: if true; // Public read for tournament settings
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Discount codes - admin write, public read for validation
+    match /discount_codes/{codeId} {
+      allow read: if true; // Public read for validation
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Blogs - public read, admin write
+    match /blogs/{blogId} {
+      allow read: if resource.data.status == 'published' || 
+        (request.auth != null && 
+         exists(/databases/$(database)/documents/admin_users/$(request.auth.uid)));
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Gallery images - public read, admin write
+    match /gallery_images/{imageId} {
+      allow read: if true; // Public read
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Tournaments - public read, admin write
+    match /tournaments/{tournamentId} {
+      allow read: if true; // Public read
+      allow write: if request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/admin_users/$(request.auth.uid));
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Helper function to validate required fields
+    function hasRequiredFields(fields) {
+      return fields.diff(request.resource.data.keys()).size() == 0;
+    }
+  }
+}

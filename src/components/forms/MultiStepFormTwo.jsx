@@ -12,7 +12,18 @@ const MultiStepFormTwo = () => {
   const [classesfor, setClassesFor] = useState("Child");
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  const centers = ["JP Nagar, 8th Phase", "Akshayanagar"];
+  // Define centres by city
+  const centersByCity = {
+    "Bangalore": ["JP Nagar, 8th Phase", "Akshayanagar"],
+    "Bengaluru": ["JP Nagar, 8th Phase", "Akshayanagar"],
+    // Add more cities and their centres here as needed
+  };
+
+  // Get available centres based on selected coaching city
+  const getAvailableCentres = () => {
+    const selectedCity = formData.coaching_city;
+    return centersByCity[selectedCity] || [];
+  };
   const [step, setStep] = useState(1);
   const [succesMessage, setSuccesMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -64,10 +75,60 @@ const MultiStepFormTwo = () => {
     Terms_and_condition_two: "No", // Default to No, set to Yes when checked
   });
 
-  // Handles changes for standard input fields
+  // Handles changes for standard input fields with real-time validation
   const handleChange = (e) => {
     setErrorMessage("");
     const { name, value } = e.target;
+
+    // Real-time validation with specific messages
+    // Name validation (only letters and spaces)
+    if (name.includes('Name') || name.includes('FirstName') || name.includes('LastName')) {
+      const nameRegex = /^[a-zA-Z\s]*$/;
+      if (!nameRegex.test(value)) {
+        if (name.includes('student') || name.includes('Student')) {
+          setErrorMessage("Student name should only contain letters and spaces");
+        } else if (name.includes('father') || name.includes('Father')) {
+          setErrorMessage("Father's name should only contain letters and spaces");
+        } else if (name.includes('mother') || name.includes('Mother')) {
+          setErrorMessage("Mother's name should only contain letters and spaces");
+        } else if (name.includes('ref') || name.includes('Ref')) {
+          setErrorMessage("Referral name should only contain letters and spaces");
+        } else {
+          setErrorMessage("Name should only contain letters and spaces");
+        }
+        return;
+      }
+    }
+
+    // Pincode validation (only numbers)
+    if (name === 'pincode') {
+      const pincodeRegex = /^\d*$/;
+      if (!pincodeRegex.test(value)) {
+        setErrorMessage("Pincode should only contain numbers");
+        return;
+      }
+      if (value.length > 6) {
+        setErrorMessage("Pincode should not exceed 6 digits for India");
+        return;
+      }
+    }
+
+    // Email validation with specific messages
+    if (name.includes('Email') && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        if (name.includes('student') || name.includes('Student')) {
+          setErrorMessage("Please enter a valid student email address");
+        } else if (name.includes('father') || name.includes('Father')) {
+          setErrorMessage("Please enter a valid father's email address");
+        } else if (name.includes('mother') || name.includes('Mother')) {
+          setErrorMessage("Please enter a valid mother's email address");
+        } else {
+          setErrorMessage("Please enter a valid email address");
+        }
+      }
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -102,84 +163,256 @@ const MultiStepFormTwo = () => {
     }
   };
 
-  // Validation logic for each step
+  // Enhanced validation logic for each step
   const validationCheck = () => {
     if (step === 1) {
-      if (
-        !classesfor ||
-        !formData.studentFirstName ||
-        !formData.studentLastName ||
-        !formData.gender ||
-        !formData.dob
-      ) {
+      // Basic required fields with specific error messages
+      if (!classesfor) {
+        setErrorMessage("Please select whether classes are for Child or Adult");
         return false;
       }
-      if (
-        classesfor !== "Child" &&
-        (!formData.studentEmail || !formData.studentPhone)
-      ) {
+      if (!formData.studentFirstName) {
+        setErrorMessage("Please enter student's first name");
         return false;
+      }
+      if (!formData.studentLastName) {
+        setErrorMessage("Please enter student's last name");
+        return false;
+      }
+      if (!formData.gender) {
+        setErrorMessage("Please select gender");
+        return false;
+      }
+      if (!formData.dob) {
+        setErrorMessage("Please enter date of birth");
+        return false;
+      }
+
+      // Name validations
+      if (formData.studentFirstName.length < 2 || formData.studentFirstName.length > 50) {
+        setErrorMessage("First name must be between 2-50 characters");
+        return false;
+      }
+      if (formData.studentLastName.length < 2 || formData.studentLastName.length > 50) {
+        setErrorMessage("Last name must be between 2-50 characters");
+        return false;
+      }
+
+      // Name should only contain letters and spaces
+      const nameRegex = /^[a-zA-Z\s]+$/;
+      if (!nameRegex.test(formData.studentFirstName)) {
+        setErrorMessage("First name should only contain letters and spaces");
+        return false;
+      }
+      if (!nameRegex.test(formData.studentLastName)) {
+        setErrorMessage("Last name should only contain letters and spaces");
+        return false;
+      }
+
+      // Age validation from DOB
+      const birthDate = new Date(formData.dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 3) {
+        setErrorMessage("Student must be at least 3 years old to register");
+        return false;
+      }
+      if (age > 80) {
+        setErrorMessage("Maximum age limit is 80 years for registration");
+        return false;
+      }
+
+      // DOB should not be in future
+      if (birthDate > today) {
+        setErrorMessage("Date of birth cannot be in the future");
+        return false;
+      }
+
+      // Age-category validation message
+      if (classesfor === "Child" && age > 18) {
+        setErrorMessage("Students above 18 years should select 'Adult' category");
+        return false;
+      }
+      if (classesfor === "Adult" && age <= 18) {
+        setErrorMessage("Students 18 years or below should select 'Child' category");
+        return false;
+      }
+
+      // Adult validations
+      if (classesfor !== "Child") {
+        if (!formData.studentEmail || !formData.studentPhone) {
+          setErrorMessage("Email and phone are required for adult registrations");
+          return false;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.studentEmail)) {
+          setErrorMessage("Please enter a valid email address");
+          return false;
+        }
+
+        // Phone validation (basic)
+        if (formData.studentPhone.length < 10) {
+          setErrorMessage("Please enter a valid phone number");
+          return false;
+        }
       }
     }
     if (step === 2) {
-      if (
-        classesfor === "Child" &&
-        !(
-          formData.fatherFirstName &&
-          formData.fatherLastName &&
-          formData.fatherEmail &&
-          formData.fatherPhone
-        ) &&
-        !(
-          formData.motherFirstName &&
-          formData.motherLastName &&
-          formData.motherEmail &&
-          formData.motherPhone
-        )
-      ) {
-        return false; // At least one parent's details required for child
+      if (classesfor === "Child") {
+        // At least one parent's complete details required
+        const fatherComplete = formData.fatherFirstName && formData.fatherLastName &&
+                              formData.fatherEmail && formData.fatherPhone;
+        const motherComplete = formData.motherFirstName && formData.motherLastName &&
+                              formData.motherEmail && formData.motherPhone;
+
+        if (!fatherComplete && !motherComplete) {
+          setErrorMessage("Please provide complete details for at least one parent");
+          return false;
+        }
+
+        // Validate parent emails if provided
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (formData.fatherEmail && !emailRegex.test(formData.fatherEmail)) {
+          setErrorMessage("Please enter a valid father's email address");
+          return false;
+        }
+        if (formData.motherEmail && !emailRegex.test(formData.motherEmail)) {
+          setErrorMessage("Please enter a valid mother's email address");
+          return false;
+        }
+
+        // Validate parent names
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        if (formData.fatherFirstName && !nameRegex.test(formData.fatherFirstName)) {
+          setErrorMessage("Father's first name should only contain letters and spaces");
+          return false;
+        }
+        if (formData.motherFirstName && !nameRegex.test(formData.motherFirstName)) {
+          setErrorMessage("Mother's first name should only contain letters and spaces");
+          return false;
+        }
+
+        // Phone validation for parents
+        if (formData.fatherPhone && formData.fatherPhone.length < 10) {
+          setErrorMessage("Please enter a valid father's phone number");
+          return false;
+        }
+        if (formData.motherPhone && formData.motherPhone.length < 10) {
+          setErrorMessage("Please enter a valid mother's phone number");
+          return false;
+        }
       }
     }
 
     if (step === 3) {
-      if (
-        !formData.country ||
-        !formData.country_code ||
-        !formData.address_line1 ||
-        !formData.state ||
-        !formData.city ||
-        !formData.pincode
-      ) {
+      // Specific address field validations
+      if (!formData.country) {
+        setErrorMessage("Please select your country");
         return false;
+      }
+      if (!formData.address_line1) {
+        setErrorMessage("Please enter your address");
+        return false;
+      }
+      if (!formData.state) {
+        setErrorMessage("Please select your state");
+        return false;
+      }
+      if (!formData.city) {
+        setErrorMessage("Please select your city");
+        return false;
+      }
+      if (!formData.pincode) {
+        setErrorMessage("Please enter your pincode/postal code");
+        return false;
+      }
+
+      // Address validation
+      if (formData.address_line1.length < 5 || formData.address_line1.length > 200) {
+        setErrorMessage("Address should be between 5-200 characters");
+        return false;
+      }
+
+      // Pincode validation (6 digits for India)
+      if (formData.country_code === "IN") {
+        const pincodeRegex = /^\d{6}$/;
+        if (!pincodeRegex.test(formData.pincode)) {
+          setErrorMessage("Please enter a valid 6-digit pincode");
+          return false;
+        }
+      } else {
+        // Basic validation for other countries
+        if (formData.pincode.length < 3 || formData.pincode.length > 10) {
+          setErrorMessage("Please enter a valid postal code");
+          return false;
+        }
       }
     }
 
     if (step === 4) {
       if (!formData.mode) {
+        setErrorMessage("Please select coaching mode (Online or Offline)");
         return false;
       }
-      if (
-        formData.mode === "Offline" &&
-        (!formData.coaching_city || !formData.preferredCentre)
-      ) {
-        return false;
+      if (formData.mode === "Offline") {
+        if (!formData.coaching_city) {
+          setErrorMessage("Please select coaching city for offline classes");
+          return false;
+        }
+        if (!formData.preferredCentre) {
+          setErrorMessage("Please select preferred centre for offline classes");
+          return false;
+        }
       }
     }
 
     if (step === 5) {
       if (!formData.heardFrom) {
+        setErrorMessage("Please select how you heard about us");
         return false;
       }
-      if (
-        formData.heardFrom === "Friends/Family" &&
-        (!formData.refFirstName || !formData.refLastName)
-      ) {
-        return false;
+
+      if (formData.heardFrom === "Friends/Family") {
+        if (!formData.refFirstName || !formData.refLastName) {
+          setErrorMessage("Please provide referral person's name");
+          return false;
+        }
+
+        // Validate referral names
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        if (!nameRegex.test(formData.refFirstName)) {
+          setErrorMessage("Referral first name should only contain letters and spaces");
+          return false;
+        }
+        if (!nameRegex.test(formData.refLastName)) {
+          setErrorMessage("Referral last name should only contain letters and spaces");
+          return false;
+        }
+
+        if (formData.refFirstName.length < 2 || formData.refLastName.length < 2) {
+          setErrorMessage("Referral names must be at least 2 characters long");
+          return false;
+        }
       }
-      if (formData.heardFrom === "Other" && !formData.otherSource) {
-        return false;
+
+      if (formData.heardFrom === "Other") {
+        if (!formData.otherSource) {
+          setErrorMessage("Please specify the source");
+          return false;
+        }
+        if (formData.otherSource.length < 3 || formData.otherSource.length > 100) {
+          setErrorMessage("Source description should be between 3-100 characters");
+          return false;
+        }
       }
-      // Captcha and T&C validation will be done in onSubmit
+      // T&C validation will be done in onSubmit
     }
 
     return true;
@@ -195,11 +428,8 @@ const MultiStepFormTwo = () => {
       } else {
         setStep((prev) => prev + 1);
       }
-    } else {
-      setErrorMessage(
-        "Please fill all required fields before proceeding Next."
-      );
     }
+    // Error message is already set in validationCheck() function
   };
 
   const prevStep = () => {
@@ -222,30 +452,33 @@ const MultiStepFormTwo = () => {
       return;
     }
 
-    if (enteredCaptcha.toUpperCase() !== captcha.toUpperCase()) {
-      setErrorMessage("Incorrect captcha. Please try again.");
-      setIsSubmitting(false);
-      return;
-    }
+    // Captcha validation disabled
+    // if (enteredCaptcha.toUpperCase() !== captcha.toUpperCase()) {
+    //   setErrorMessage("Incorrect captcha. Please try again.");
+    //   setIsSubmitting(false);
+    //   return;
+    // }
 
-    const recaptchaValue = recaptchaRef.current.getValue();
+    // const recaptchaValue = recaptchaRef.current.getValue();
 
-    if (!recaptchaValue) {
-      setErrorMessage("Please complete the 'I am not a robot' verification.");
-      setIsSubmitting(false);
-      return;
-    }
+    // if (!recaptchaValue) {
+    //   setErrorMessage("Please complete the 'I am not a robot' verification.");
+    //   setIsSubmitting(false);
+    //   return;
+    // }
 
     try {
-      const res = await fetch("/api/verify-recaptcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: recaptchaValue }),
-      });
+      // ReCaptcha verification disabled
+      // const res = await fetch("/api/verify-recaptcha", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ token: recaptchaValue }),
+      // });
 
-      const data = await res.json();
+      // const data = await res.json();
 
-      if (data.success) {
+      // if (data.success) {
+      if (true) { // Always proceed without captcha verification
         const templateParams = {
           studentFirstName: formData.studentFirstName,
           studentMiddleName: formData.studentMiddleName,
@@ -288,6 +521,54 @@ const MultiStepFormTwo = () => {
         };
 
         try {
+          // Save to Supabase first
+          const courseRegistrationData = {
+            participant_first_name: formData.studentFirstName,
+            participant_last_name: formData.studentLastName,
+            email: formData.studentEmail,
+            phone: formData.studentPhone,
+            age: formData.dob ? new Date().getFullYear() - new Date(formData.dob).getFullYear() : null,
+            course_type: formData.mode,
+            amount_paid: 0, // Course registration is free
+            payment_status: 'completed', // No payment required
+            // Additional course-specific data
+            student_middle_name: formData.studentMiddleName,
+            dob: formData.dob,
+            gender: formData.gender,
+            father_name: `${formData.fatherFirstName} ${formData.fatherLastName}`,
+            father_email: formData.fatherEmail,
+            father_phone: formData.fatherPhone,
+            mother_name: `${formData.motherFirstName} ${formData.motherLastName}`,
+            mother_email: formData.motherEmail,
+            mother_phone: formData.motherPhone,
+            country: formData.country,
+            state: formData.state,
+            city: formData.city,
+            address: `${formData.address_line1} ${formData.address_line2}`,
+            pincode: formData.pincode,
+            coaching_city: formData.coaching_city,
+            preferred_centre: formData.preferredCentre,
+            heard_from: formData.heardFrom,
+            referral_name: `${formData.refFirstName} ${formData.refLastName}`,
+            other_source: formData.otherSource
+          };
+
+          // Save to Supabase
+          const supabaseResponse = await fetch('/api/course-registration', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(courseRegistrationData),
+          });
+
+          if (supabaseResponse.ok) {
+            console.log('✅ Course registration saved to Supabase');
+          } else {
+            console.error('❌ Failed to save to Supabase');
+          }
+
+          // Also save to Google Sheets (backup)
           const FORM_WEB_APP_URL =
             "https://script.google.com/macros/s/AKfycbzxBoE_OLGVSZvdAVz83Tql_uhenHe1anD363NOpz_yUKlVqeg-UBG2ufnDM_3hfkVFbQ/exec";
 
@@ -393,7 +674,7 @@ const MultiStepFormTwo = () => {
       return;
     } finally {
       setIsSubmitting(false);
-      recaptchaRef.current.reset();
+      // recaptchaRef.current.reset(); // Disabled
     }
   };
 
@@ -468,6 +749,10 @@ const MultiStepFormTwo = () => {
                 value={formData.studentFirstName}
                 onChange={handleChange}
                 required
+                minLength="2"
+                maxLength="50"
+                pattern="[a-zA-Z\s]+"
+                title="First name should only contain letters and spaces (2-50 characters)"
                 className="p-2 border border-[#d3d1d1] rounded"
               />
               <input
@@ -483,6 +768,10 @@ const MultiStepFormTwo = () => {
                 value={formData.studentLastName}
                 onChange={handleChange}
                 required
+                minLength="2"
+                maxLength="50"
+                pattern="[a-zA-Z\s]+"
+                title="Last name should only contain letters and spaces (2-50 characters)"
                 className="p-2 border border-[#d3d1d1] rounded"
               />
             </div>
@@ -520,6 +809,10 @@ const MultiStepFormTwo = () => {
                 value={formData.dob}
                 onChange={handleChange}
                 required
+                min="1944-01-01"
+                max={new Date().toISOString().split('T')[0]}
+                title="Please select a valid date of birth (DD/MM/YYYY format)"
+                placeholder="DD/MM/YYYY"
                 className="w-full max-md:w-[95%] p-2 border border-[#d3d1d1] rounded"
               />
             </div>
@@ -534,6 +827,8 @@ const MultiStepFormTwo = () => {
                   value={formData.studentEmail}
                   onChange={handleChange}
                   required={classesfor !== "Child"} // Make required only if not child
+                  maxLength="255"
+                  title="Please enter a valid email address"
                   className="p-2 border border-[#d3d1d1] rounded"
                 />
 
@@ -817,6 +1112,9 @@ const MultiStepFormTwo = () => {
               value={formData.pincode}
               onChange={handleChange}
               required
+              minLength="3"
+              maxLength="10"
+              title="Please enter a valid postal/pin code"
               className="w-full p-2 mt-3 border border-[#d3d1d1] rounded"
             />
 
@@ -872,37 +1170,20 @@ const MultiStepFormTwo = () => {
 
             {/* Only show below if Offline selected */}
             {formData.mode === "Offline" && (
-              <>
-                <select
-                  name="coaching_city"
-                  value={formData.coaching_city}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 mt-3 border border-[#d3d1d1] rounded"
-                >
-                  <option value="">Select Coaching City *</option>
-                  {cities.map((city) => (
-                    <option key={city.latitude} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  name="preferredCentre"
-                  value={formData.preferredCentre}
-                  onChange={handleChange}
-                  required
-                  className="w-full p-2 mt-3 border border-[#d3d1d1] rounded "
-                >
-                  <option value="">Select Preferred Centre *</option>
-                  {centers.map((centre, i) => (
-                    <option key={i} value={centre}>
-                      {centre}
-                    </option>
-                  ))}
-                </select>
-              </>
+              <select
+                name="preferredCentre"
+                value={formData.preferredCentre}
+                onChange={handleChange}
+                required
+                className="w-full p-2 mt-3 border border-[#d3d1d1] rounded "
+              >
+                <option value="">Select Preferred Centre *</option>
+                {centers.map((centre, i) => (
+                  <option key={i} value={centre}>
+                    {centre}
+                  </option>
+                ))}
+              </select>
             )}
 
             <div className="flex justify-between mt-5">
@@ -1024,8 +1305,8 @@ const MultiStepFormTwo = () => {
               </p>
             </div>
 
-            {/* Captcha */}
-            <div className="flex items-center space-x-3 mt-4">
+            {/* Captcha - DISABLED */}
+            {/* <div className="flex items-center space-x-3 mt-4">
               <label className="font-semibold">Captcha - </label>
               <input
                 type="text"
@@ -1038,17 +1319,17 @@ const MultiStepFormTwo = () => {
                 className="border px-3 py-1 rounded w-32"
               />
               <span className="font-mono text-blue-700 text-lg">{captcha}</span>
-            </div>
+            </div> */}
 
-            {/* I am not a Robot */}
-            <div className="mt-6">
+            {/* I am not a Robot - DISABLED */}
+            {/* <div className="mt-6">
               <ReCAPTCHA
                 ref={recaptchaRef}
                 sitekey="6LehpV8rAAAAABFbW0OBbIDomGf33mLs7YIoMyU1"
                 onChange={() => setIsHuman(true)} // ReCAPTCHA passes null on expiry
                 onExpired={() => setIsHuman(false)}
               />
-            </div>
+            </div> */}
 
             <div className="flex justify-between mt-5">
               <button

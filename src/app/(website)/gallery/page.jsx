@@ -3,8 +3,9 @@ import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 
+
 // Dynamic import for Banner
-const Banner = dynamic(() => import("../../components/ui/Banner"), {
+const Banner = dynamic(() => import("../../../components/ui/Banner"), {
   loading: () => <div className="h-64 bg-gray-200 animate-pulse"></div>
 });
 
@@ -13,15 +14,7 @@ const GalleryPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
 
-  // Static gallery images (fallback)
-  const staticImages = [
-    { id: 1, image_url: "/images/indian-img-one.jpg", image_name: "Chess Training Session" },
-    { id: 2, image_url: "/images/indian-img-two.jpg", image_name: "Tournament Winners" },
-    { id: 3, image_url: "/images/indian-img-three.jpg", image_name: "Young Chess Masters" },
-    { id: 4, image_url: "/images/indian-img-four.jpg", image_name: "Strategy Discussion" },
-    { id: 5, image_url: "/images/indian-img-five.jpg", image_name: "Chess Academy" },
-    { id: 6, image_url: "/images/contact-one.jpg", image_name: "Learning Together" },
-  ];
+  // No static images - only show admin-managed gallery
 
   useEffect(() => {
     fetchGalleryImages();
@@ -29,20 +22,18 @@ const GalleryPage = () => {
 
   const fetchGalleryImages = async () => {
     try {
-      const response = await fetch('/api/admin/gallery');
+      // Fetch gallery images from admin-managed SQLite database
+      const response = await fetch('/api/gallery');
       if (response.ok) {
-        const data = await response.json();
-        // Combine admin uploaded images with static images
-        const allImages = [...data, ...staticImages];
-        setImages(allImages);
+        const adminImages = await response.json();
+        setImages(adminImages);
       } else {
-        // Use static images as fallback
-        setImages(staticImages);
+        throw new Error('Failed to fetch gallery images');
       }
     } catch (error) {
       console.error('Error fetching gallery images:', error);
-      // Use static images as fallback
-      setImages(staticImages);
+      // Show empty gallery if no images
+      setImages([]);
     } finally {
       setLoading(false);
     }
@@ -85,78 +76,55 @@ const GalleryPage = () => {
           friendships - here's a look into the world of ThinQ Chess.
         </h4>
 
-        {/* Admin Uploaded Images Section */}
-        {images.filter(img => img.id > 1000).length > 0 && (
-          <div className="mb-16">
-            <h3 className="text-xl font-bold text-[#2B3AA0] mb-6 text-center">
-              Latest Updates from ThinQ Chess
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {images.filter(img => img.id > 1000).map((image) => (
-                <div 
-                  key={image.id} 
-                  className="group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
-                  onClick={() => openModal(image)}
-                >
-                  <div className="aspect-video overflow-hidden relative">
-                    <Image
-                      src={image.image_url}
-                      alt={image.image_name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                      loading="lazy"
-                      quality={75}
-                      placeholder="blur"
-                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                      onError={(e) => {
-                        e.target.src = '/images/chess-placeholder.jpg';
-                      }}
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-[#2B3AA0] transition-colors">
-                      {image.image_name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {image.uploaded_at ? new Date(image.uploaded_at).toLocaleDateString() : 'Recent'}
-                    </p>
-                  </div>
+        {/* Gallery Images */}
+        {images.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {images.map((image) => (
+              <div
+                key={image.id}
+                className="group cursor-pointer bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300"
+                onClick={() => openModal(image)}
+              >
+                <div className="aspect-video overflow-hidden relative">
+                  <Image
+                    src={image.image_url}
+                    alt={image.image_name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                    quality={75}
+                    onError={(e) => {
+                      e.target.src = '/images/chess-placeholder.jpg';
+                    }}
+                  />
                 </div>
-              ))}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-900 group-hover:text-[#2B3AA0] transition-colors">
+                    {image.image_name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {image.uploaded_at ? new Date(image.uploaded_at).toLocaleDateString() : 'Recent'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="mb-6">
+              <svg className="mx-auto h-24 w-24 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Images Yet</h3>
+            <p className="text-gray-500 max-w-md mx-auto">
+              Our gallery is being updated with amazing moments from ThinQ Chess. Check back soon to see photos from our tournaments, training sessions, and events!
+            </p>
           </div>
         )}
 
-        {/* Static Gallery Grid */}
-        <div className="md:mt-16 mt-8">
-          <h3 className="text-xl font-bold text-[#2B3AA0] mb-6 text-center">
-            Our Chess Journey
-          </h3>
-          <div className="max-md:flex max-md:flex-col md:grid grid-cols-3 grid-rows-2 gap-4">
-            {staticImages.map((imgItem, index) => {
-              return (
-                <div
-                  key={index}
-                  className="group overflow-hidden rounded-md cursor-pointer relative aspect-video"
-                  onClick={() => openModal(imgItem)}
-                >
-                  <Image
-                    src={imgItem.image_url}
-                    alt={imgItem.image_name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="group-hover:scale-[105%] transition-all duration-300 object-cover"
-                    loading="lazy"
-                    quality={80}
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
+
       </section>
 
       {/* Modal for Image Preview */}

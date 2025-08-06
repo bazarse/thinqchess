@@ -5,13 +5,7 @@ import { useRouter } from "next/navigation";
 const DiscountCodes = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [discountCodes, setDiscountCodes] = useState([
-    { id: 1, code: 'TC10', discount_percent: 10, usage_limit: 50, used_count: 12, is_active: true },
-    { id: 2, code: 'TC20', discount_percent: 20, usage_limit: 30, used_count: 8, is_active: true },
-    { id: 3, code: 'TCON15', discount_percent: 15, usage_limit: 100, used_count: 25, is_active: true },
-    { id: 4, code: 'STUDENT25', discount_percent: 25, usage_limit: 200, used_count: 45, is_active: true },
-    { id: 5, code: 'EARLY20', discount_percent: 20, usage_limit: 75, used_count: 18, is_active: false }
-  ]);
+  const [discountCodes, setDiscountCodes] = useState([]);
   const [newCode, setNewCode] = useState({
     code: '',
     discount_percent: '',
@@ -24,6 +18,8 @@ const DiscountCodes = () => {
     discount_percent: '',
     usage_limit: '',
     email_domain: '',
+    email_prefix: '',
+    match_type: 'domain', // 'domain' or 'email_prefix'
     is_active: true
   });
   const [message, setMessage] = useState("");
@@ -32,6 +28,37 @@ const DiscountCodes = () => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchDiscountCodes();
+    }
+  }, [user]);
+
+  const fetchDiscountCodes = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/admin/discount-codes');
+      if (!response.ok) {
+        throw new Error('Failed to fetch discount codes');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDiscountCodes(data.discountCodes);
+        setMessage('');
+      } else {
+        throw new Error(data.error || 'Failed to fetch discount codes');
+      }
+    } catch (error) {
+      console.error('Error fetching discount codes:', error);
+      setMessage('Error loading discount codes');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -50,84 +77,199 @@ const DiscountCodes = () => {
     }
   };
 
-  const handleAddCode = () => {
+  const handleAddCode = async () => {
     if (!newCode.code || !newCode.discount_percent || !newCode.usage_limit) {
       setMessage("Please fill all fields");
       return;
     }
 
-    const code = {
-      id: Date.now(),
-      code: newCode.code.toUpperCase(),
-      discount_percent: parseFloat(newCode.discount_percent),
-      usage_limit: parseInt(newCode.usage_limit),
-      used_count: 0,
-      is_active: newCode.is_active,
-      code_type: 'manual'
-    };
+    try {
+      const response = await fetch('/api/admin/discount-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: newCode.code.toUpperCase(),
+          discount_percent: parseFloat(newCode.discount_percent),
+          usage_limit: parseInt(newCode.usage_limit),
+          is_active: newCode.is_active,
+          code_type: 'manual'
+        }),
+      });
 
-    setDiscountCodes(prev => [...prev, code]);
-    setNewCode({ code: '', discount_percent: '', usage_limit: '', is_active: true, code_type: 'manual' });
-    setMessage("Discount code added successfully!");
-    setTimeout(() => setMessage(""), 3000);
+      const data = await response.json();
+
+      if (data.success) {
+        setDiscountCodes(prev => [...prev, data.discountCode]);
+        setNewCode({ code: '', discount_percent: '', usage_limit: '', is_active: true, code_type: 'manual' });
+        setMessage("Discount code added successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(data.error || "Failed to add discount code");
+        setTimeout(() => setMessage(""), 5000);
+      }
+    } catch (error) {
+      console.error('Error adding discount code:', error);
+      setMessage("Error adding discount code");
+      setTimeout(() => setMessage(""), 5000);
+    }
   };
 
-  const handleAddPrefixCode = () => {
-    if (!prefixCode.prefix || !prefixCode.discount_percent || !prefixCode.usage_limit || !prefixCode.email_domain) {
-      setMessage("Please fill all fields for prefix-based coupon");
+  const handleAddPrefixCode = async () => {
+    // Validation based on match type
+    if (!prefixCode.prefix || !prefixCode.discount_percent || !prefixCode.usage_limit) {
+      setMessage("Please fill all required fields for prefix-based coupon");
       return;
     }
 
-    const code = {
-      id: Date.now(),
-      code: `${prefixCode.prefix}*`, // * indicates it's a prefix
-      discount_percent: parseFloat(prefixCode.discount_percent),
-      usage_limit: parseInt(prefixCode.usage_limit),
-      used_count: 0,
-      is_active: prefixCode.is_active,
-      code_type: 'prefix',
-      prefix: prefixCode.prefix,
-      email_domain: prefixCode.email_domain
-    };
+    if (prefixCode.match_type === 'domain' && !prefixCode.email_domain) {
+      setMessage("Please enter email domain for domain-based matching");
+      return;
+    }
 
-    setDiscountCodes(prev => [...prev, code]);
-    setPrefixCode({ prefix: '', discount_percent: '', usage_limit: '', email_domain: '', is_active: true });
-    setMessage("Prefix-based discount code added successfully!");
-    setTimeout(() => setMessage(""), 3000);
+    if (prefixCode.match_type === 'email_prefix' && !prefixCode.email_prefix) {
+      setMessage("Please enter email prefix/name for email-based matching");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/discount-codes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: `${prefixCode.prefix}*`, // * indicates it's a prefix
+          discount_percent: parseFloat(prefixCode.discount_percent),
+          usage_limit: parseInt(prefixCode.usage_limit),
+          is_active: prefixCode.is_active,
+          code_type: 'prefix',
+          prefix: prefixCode.prefix,
+          email_domain: prefixCode.email_domain || null,
+          email_prefix: prefixCode.email_prefix || null,
+          match_type: prefixCode.match_type
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDiscountCodes(prev => [...prev, data.discountCode]);
+        setPrefixCode({
+          prefix: '',
+          discount_percent: '',
+          usage_limit: '',
+          email_domain: '',
+          email_prefix: '',
+          match_type: 'domain',
+          is_active: true
+        });
+        setMessage("Prefix-based discount code added successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(data.error || "Failed to add prefix-based discount code");
+        setTimeout(() => setMessage(""), 5000);
+      }
+    } catch (error) {
+      console.error('Error adding prefix-based discount code:', error);
+      setMessage("Error adding prefix-based discount code");
+      setTimeout(() => setMessage(""), 5000);
+    }
   };
 
   const generateCouponForEmail = (email) => {
-    // Find prefix codes that match the email domain
-    const emailDomain = email.split('@')[1];
-    const matchingPrefixCode = discountCodes.find(code =>
-      code.code_type === 'prefix' &&
-      code.email_domain === emailDomain &&
-      code.is_active
-    );
+    const emailParts = email.split('@');
+    const emailUsername = emailParts[0].toLowerCase();
+    const emailDomain = emailParts[1];
+
+    // Find matching prefix codes
+    const matchingPrefixCode = discountCodes.find(code => {
+      if (code.code_type !== 'prefix' || !code.is_active) {
+        return false;
+      }
+
+      if (code.match_type === 'domain') {
+        // Domain-based matching
+        return code.email_domain === emailDomain;
+      } else if (code.match_type === 'email_prefix') {
+        // Email prefix/name-based matching
+        const searchPrefix = code.email_prefix.toLowerCase();
+        return emailUsername.includes(searchPrefix);
+      }
+
+      return false;
+    });
 
     if (matchingPrefixCode) {
       // Generate unique coupon code
       const timestamp = Date.now().toString().slice(-6);
-      const emailPrefix = email.split('@')[0].slice(0, 3).toUpperCase();
+      const emailPrefix = emailUsername.slice(0, 3).toUpperCase();
       return `${matchingPrefixCode.prefix}${emailPrefix}${timestamp}`;
     }
 
     return null;
   };
 
-  const toggleCodeStatus = (id) => {
-    setDiscountCodes(prev => 
-      prev.map(code => 
-        code.id === id ? { ...code, is_active: !code.is_active } : code
-      )
-    );
+  const toggleCodeStatus = async (id) => {
+    const code = discountCodes.find(c => c.id === id);
+    if (!code) return;
+
+    try {
+      const response = await fetch('/api/admin/discount-codes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: code.id,
+          is_active: !code.is_active
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDiscountCodes(prev =>
+          prev.map(c =>
+            c.id === id ? { ...c, is_active: !c.is_active } : c
+          )
+        );
+        setMessage(`Discount code ${!code.is_active ? 'activated' : 'deactivated'} successfully!`);
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(data.error || "Failed to update discount code status");
+        setTimeout(() => setMessage(""), 5000);
+      }
+    } catch (error) {
+      console.error('Error updating discount code status:', error);
+      setMessage("Error updating discount code status");
+      setTimeout(() => setMessage(""), 5000);
+    }
   };
 
-  const deleteCode = (id) => {
+  const deleteCode = async (id) => {
     if (confirm("Are you sure you want to delete this discount code?")) {
-      setDiscountCodes(prev => prev.filter(code => code.id !== id));
-      setMessage("Discount code deleted successfully!");
-      setTimeout(() => setMessage(""), 3000);
+      try {
+        const response = await fetch(`/api/admin/discount-codes?id=${id}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setDiscountCodes(prev => prev.filter(code => code.id !== id));
+          setMessage("Discount code deleted successfully!");
+          setTimeout(() => setMessage(""), 3000);
+        } else {
+          setMessage(data.error || "Failed to delete discount code");
+          setTimeout(() => setMessage(""), 5000);
+        }
+      } catch (error) {
+        console.error('Error deleting discount code:', error);
+        setMessage("Error deleting discount code");
+        setTimeout(() => setMessage(""), 5000);
+      }
     }
   };
 
@@ -153,29 +295,12 @@ const DiscountCodes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <a href="/admin/dashboard" className="text-[#2B3AA0] hover:text-[#FFB31A] mr-4">
-                ← Dashboard
-              </a>
-              <h1 className="text-2xl font-bold text-[#2B3AA0]">Discount Codes</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Discount Codes</h1>
+        <p className="text-gray-600">Create and manage promotional discount codes</p>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -231,10 +356,37 @@ const DiscountCodes = () => {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">📧 Prefix-Based Email Coupons</h2>
           <p className="text-gray-600 mb-4">
-            Create discount codes that are automatically generated for users with specific email domains.
+            Create discount codes that are automatically generated for users with specific email domains or email prefixes/names.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* Match Type Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Matching Type</label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="domain"
+                  checked={prefixCode.match_type === 'domain'}
+                  onChange={(e) => setPrefixCode(prev => ({ ...prev, match_type: e.target.value }))}
+                  className="mr-2"
+                />
+                <span className="text-sm">Email Domain (e.g., gmail.com)</span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="email_prefix"
+                  checked={prefixCode.match_type === 'email_prefix'}
+                  onChange={(e) => setPrefixCode(prev => ({ ...prev, match_type: e.target.value }))}
+                  className="mr-2"
+                />
+                <span className="text-sm">Email Name/Prefix (e.g., kavita, student)</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Prefix</label>
               <input
@@ -247,17 +399,35 @@ const DiscountCodes = () => {
               />
               <p className="text-xs text-gray-500 mt-1">e.g., STUDENT, TEACHER</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Domain</label>
-              <input
-                type="text"
-                value={prefixCode.email_domain}
-                onChange={(e) => setPrefixCode(prev => ({ ...prev, email_domain: e.target.value.toLowerCase() }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="gmail.com"
-              />
-              <p className="text-xs text-gray-500 mt-1">e.g., gmail.com, edu.in</p>
-            </div>
+
+            {prefixCode.match_type === 'domain' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Domain</label>
+                <input
+                  type="text"
+                  value={prefixCode.email_domain}
+                  onChange={(e) => setPrefixCode(prev => ({ ...prev, email_domain: e.target.value.toLowerCase() }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                  placeholder="gmail.com"
+                />
+                <p className="text-xs text-gray-500 mt-1">e.g., gmail.com, edu.in</p>
+              </div>
+            )}
+
+            {prefixCode.match_type === 'email_prefix' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Name/Prefix</label>
+                <input
+                  type="text"
+                  value={prefixCode.email_prefix}
+                  onChange={(e) => setPrefixCode(prev => ({ ...prev, email_prefix: e.target.value.toLowerCase() }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                  placeholder="kavita"
+                />
+                <p className="text-xs text-gray-500 mt-1">e.g., kavita, student, teacher</p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
               <input
@@ -294,8 +464,10 @@ const DiscountCodes = () => {
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Users with matching email domains get auto-generated coupon codes</li>
-              <li>• Example: STUDENT prefix + user@gmail.com = STUDENTUSE123456</li>
+              <li>• <strong>Domain Matching:</strong> Users with matching email domains get auto-generated coupon codes</li>
+              <li>• <strong>Name Matching:</strong> Users with specific names/prefixes in email get auto-generated coupon codes</li>
+              <li>• Example 1: STUDENT prefix + user@gmail.com = STUDENTUSE123456</li>
+              <li>• Example 2: KAVITA prefix + kavita123@yahoo.com = KAVITAKAV123456</li>
               <li>• Codes are unique and generated when user enters their email</li>
             </ul>
           </div>
@@ -335,8 +507,15 @@ const DiscountCodes = () => {
                   <tr key={code.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{code.code}</div>
-                      {code.code_type === 'prefix' && code.email_domain && (
-                        <div className="text-xs text-gray-500">Domain: {code.email_domain}</div>
+                      {code.code_type === 'prefix' && (
+                        <div className="text-xs text-gray-500">
+                          {code.match_type === 'domain' && code.email_domain && (
+                            <span>Domain: {code.email_domain}</span>
+                          )}
+                          {code.match_type === 'email_prefix' && code.email_prefix && (
+                            <span>Email contains: {code.email_prefix}</span>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

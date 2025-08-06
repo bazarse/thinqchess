@@ -1,118 +1,58 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Image optimization
+  // Basic configuration for Turbopack compatibility
+  reactStrictMode: true,
+
+  // Simplified image optimization
   images: {
-    formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // Performance optimizations
+  // Minimal experimental features
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: [
-      'framer-motion',
-      'lucide-react',
-      '@heroicons/react',
-      'react-icons'
-    ],
-    optimizeServerReact: true,
   },
 
-  // Turbopack configuration (moved from experimental)
+  // Turbopack configuration (stable)
   turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-        as: '*.js',
-      },
-    },
+    // Exclude database files from processing
+    resolveAlias: {},
   },
 
-  // Server external packages (moved from experimental)
-  serverExternalPackages: [],
-
-  // Compiler optimizations
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-    reactRemoveProperties: process.env.NODE_ENV === 'production',
-  },
-
-  // Bundle optimization
-  webpack: (config, { dev, isServer }) => {
-    // Optimize bundle size
-    if (!dev && !isServer) {
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-          common: {
-            name: 'common',
-            minChunks: 2,
-            chunks: 'all',
-            enforce: true,
-          },
-        },
-      };
-    }
-
-    // SVG optimization
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
-
+  // Webpack configuration to ignore database files
+  webpack: (config, { isServer }) => {
+    // Ignore database files
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        '**/node_modules/**',
+        '**/data/**',
+        '**/*.db',
+        '**/*.db-shm',
+        '**/*.db-wal',
+      ],
+    };
     return config;
   },
 
-  // Headers for caching
-  async headers() {
+  // Rewrites for subdomain routing
+  async rewrites() {
     return [
       {
-        source: '/images/:path*',
-        headers: [
+        source: "/",
+        has: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            type: "host",
+            value: "lms.thinqchess.com",
           },
         ],
-      },
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        destination: "/training",
       },
     ];
   },
 
-  // Compression
-  compress: true,
 
-  // Power optimizations
-  poweredByHeader: false,
-  
-  // Static optimization
-  trailingSlash: false,
-
-  // SWC minification is enabled by default in Next.js 15
-
-
-
-  // Environment variables
-  env: {
-    DEVELOPMENT_MODE: process.env.DEVELOPMENT_MODE || 'true',
-  },
 };
 
 module.exports = nextConfig;

@@ -6,24 +6,22 @@ import Select from "react-select";
 import { Country, State, City } from "country-state-city";
 import "react-phone-input-2/lib/style.css";
 import Banner from "@/components/ui/Banner";
-import TournamentRegistrationHandler from "@/components/TournamentRegistrationHandler";
+// import TournamentRegistrationHandler from "@/components/TournamentRegistrationHandler"; // Not needed anymore
 import TournamentCountdown from "@/components/TournamentCountdown";
 
 import { loadRazorpayScript } from "@/utils/loadRazorpay";
 
-const Tournaments = ({ registrationClosed = false, statusMessage = "", countdownTarget = null, mode = "manual" }) => {
-  // Debug logging
-  console.log("Tournament props:", { registrationClosed, statusMessage, countdownTarget, mode });
+const Tournaments = () => {
   const [succesMessage, setSuccesMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAgeValid, setIsAgeValid] = useState(true);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
-  const [tournamentFee, setTournamentFee] = useState(400);
+  const [tournamentFee, setTournamentFee] = useState(500); // Default fee
   const [discountCode, setDiscountCode] = useState("");
   const [discountData, setDiscountData] = useState(null);
-  const [finalAmount, setFinalAmount] = useState(400);
+  const [finalAmount, setFinalAmount] = useState(500);
   const [tournamentTypes, setTournamentTypes] = useState([]);
   const [selectedTournamentType, setSelectedTournamentType] = useState("");
   const [emailCouponAvailable, setEmailCouponAvailable] = useState(false);
@@ -35,6 +33,16 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
   const [orderId, setOrderId] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
+
+  // Active tournament state
+  const [activeTournament, setActiveTournament] = useState(null);
+  const [hasActiveTournament, setHasActiveTournament] = useState(false);
+  const [tournamentStatus, setTournamentStatus] = useState('loading');
+  const [registrationClosed, setRegistrationClosed] = useState(true);
+  const [status, setStatus] = useState(null);
+  const [upcomingTournament, setUpcomingTournament] = useState(null);
+  const [hasUpcomingTournament, setHasUpcomingTournament] = useState(false);
+  const [countdownTarget, setCountdownTarget] = useState(null);
 
   const Online_Sessions = [
     "District/State Championships",
@@ -61,40 +69,114 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
 
   // Fetch tournament settings and page status on component mount
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        // Fetch tournament settings
-        const settingsResponse = await fetch('/api/admin/settings');
-        if (settingsResponse.ok) {
-          const settings = await settingsResponse.json();
-          setTournamentFee(settings.tournament_fee || 400);
-          setFinalAmount(settings.tournament_fee || 400);
-
-          // Set tournament types
-          const types = settings.tournament_types || [
-            {id: "open", name: "Open (Any Age)", fee: 500, age_min: null, age_max: null, active: true}
-          ];
-          setTournamentTypes(types.filter(type => type.active));
-
-          // Set default tournament type
-          if (types.length > 0) {
-            const defaultType = types.find(type => type.active) || types[0];
-            setSelectedTournamentType(defaultType.id);
-            setTournamentFee(defaultType.fee);
-            setFinalAmount(defaultType.fee);
-          }
-        }
-
-
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      } finally {
-        setPageLoading(false);
-      }
-    };
-
-    fetchSettings();
+    loadActiveTournament();
   }, []);
+
+  const loadActiveTournament = async () => {
+    try {
+      setPageLoading(true);
+
+      // First check if there's an active tournament
+      const tournamentResponse = await fetch('/api/tournament/active');
+      if (tournamentResponse.ok) {
+        const tournamentData = await tournamentResponse.json();
+
+        if (tournamentData.hasActiveTournament) {
+          setActiveTournament(tournamentData.tournament);
+          setHasActiveTournament(true);
+          setTournamentStatus(tournamentData.registrationStatus);
+
+          // Tournament details will be set based on selected category
+
+          // Get tournament categories from active tournament
+          let categories = [];
+          if (tournamentData.tournament.categories) {
+            if (Array.isArray(tournamentData.tournament.categories)) {
+              categories = tournamentData.tournament.categories;
+            } else if (typeof tournamentData.tournament.categories === 'string') {
+              try {
+                categories = JSON.parse(tournamentData.tournament.categories);
+              } catch (error) {
+                console.error('Error parsing tournament categories:', error);
+                categories = [];
+              }
+            }
+          }
+
+          console.log('Tournament categories loaded:', categories);
+
+          // If no categories, create default open category
+          if (categories.length === 0) {
+            categories = [{
+              id: 'open',
+              name: 'Open Category',
+              fee: tournamentData.tournament.fee || 500,
+              min_age: '',
+              max_age: '',
+              slots: 50
+            }];
+          }
+
+          setTournamentTypes(categories);
+          // Set first category as default
+          if (categories.length > 0) {
+            setSelectedTournamentType(categories[0].id);
+            setTournamentFee(categories[0].fee);
+            setFinalAmount(categories[0].fee);
+          }
+
+          // Check if registration is open
+          if (tournamentData.isRegistrationOpen) {
+            setRegistrationClosed(false);
+          } else {
+            setRegistrationClosed(true);
+            setStatus({
+              status: tournamentData.registrationStatus,
+              message: tournamentData.statusMessage
+            });
+
+            // Set countdown target if registration hasn't started yet
+            if (tournamentData.countdownTarget) {
+              setCountdownTarget(tournamentData.countdownTarget);
+            }
+          }
+        } else if (tournamentData.hasUpcomingTournament) {
+          // Upcoming tournament found
+          setHasActiveTournament(false);
+          setHasUpcomingTournament(true);
+          setUpcomingTournament(tournamentData.upcomingTournament);
+          setCountdownTarget(tournamentData.countdownTarget);
+          setRegistrationClosed(true);
+          setStatus({
+            status: 'upcoming_tournament',
+            message: tournamentData.statusMessage
+          });
+        } else {
+          // No active or upcoming tournament
+          setHasActiveTournament(false);
+          setHasUpcomingTournament(false);
+          setRegistrationClosed(true);
+          setStatus({
+            status: 'no_tournaments',
+            message: 'No tournaments scheduled at the moment. Please check back later.'
+          });
+        }
+      } else {
+        throw new Error('Failed to fetch tournament data');
+      }
+
+      setPageLoading(false);
+    } catch (error) {
+      console.error('Error loading active tournament:', error);
+      setHasActiveTournament(false);
+      setRegistrationClosed(true);
+      setStatus({
+        status: 'error',
+        message: 'Unable to load tournament information. Please try again later.'
+      });
+      setPageLoading(false);
+    }
+  };
 
   // Check if the user is not older than 16 years
   const isValidAge = (dob) => {
@@ -320,134 +402,55 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
     setErrorMessage("");
     setSuccesMessage("");
 
-    const razorpayLoaded = await loadRazorpayScript();
-
-    if (!razorpayLoaded) {
-      setErrorMessage(
-        "Failed to load Razorpay SDK. Check your internet connection."
-      );
-      setIsSubmitting(false);
-      return;
-    }
+    // Demo payment - skip Razorpay loading
 
     try {
-      const amount = finalAmount; // Use dynamic amount with discount applied
-      const res = await fetch("/api/razorpay", {
+      setSuccesMessage("Processing payment...");
+
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Generate demo payment ID
+      const demoPaymentId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Save registration data directly with completed payment status
+      const registrationResponse = await fetch("/api/tournament/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({
+          ...formData,
+          tournament_id: activeTournament?.id || null,
+          tournament_type: selectedTournamentType,
+          amount_paid: finalAmount,
+          discount_code: discountCode,
+          discount_amount: discountData ? (tournamentFee - finalAmount) : 0,
+          payment_id: demoPaymentId,
+          payment_status: 'completed' // Mark as completed
+        }),
       });
-      const data = await res.json();
 
-      if (data.error) {
-        setErrorMessage(data.error);
-        setIsSubmitting(false);
-        return;
+      const registrationData = await registrationResponse.json();
+
+      if (registrationData.success) {
+        console.log("Registration saved successfully:", registrationData.registration);
+        setSuccesMessage("Payment successful and registration completed!");
+        setPaymentSuccess(true);
+        setRegistrationData({
+          ...registrationData.registration,
+          payment_id: demoPaymentId
+        });
+      } else {
+        console.error("Registration save failed:", registrationData.error);
+        setErrorMessage("Registration failed. Please try again.");
       }
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        name: "Thinq Chess",
-        description: "Tournament Payment",
-        order_id: data.order.id,
-        handler: async function (response) {
-          setSuccesMessage("Payment successful!");
 
-          // Now you can send the email after successful payment
-          const templateParams = {
-            particpantFirstName: formData.particpantFirstName,
-            particpantMiddleName: formData.particpantMiddleName,
-            particpantLastName: formData.particpantLastName,
-            mail_id: formData.mail_id,
-            phone_no: formData.phone_no,
-            dob: formData.dob,
-            gender: formData.gender,
-            fidaID: formData.fidaID,
-            country: formData.country,
-            country_code: formData.country_code,
-            state: formData.state,
-            city: formData.city,
-            location: formData.location,
-            payment_status: "Payment Successfull",
-            amount_paid: amount,
-          };
 
-          // Google Sheets API
-          const FORM_WEB_APP_URL =
-            "https://script.google.com/macros/s/AKfycbwIWvxDN2ghQzvFCajO8WsJz9nOy8WhGctWhHS5l6gDQ0hxdSkVxg-FFCT9KxLUrslQRQ/exec";
 
-          fetch("/api/submit", {
-            method: "POST",
-            body: JSON.stringify({
-              webAppUrl: FORM_WEB_APP_URL,
-              templateParams,
-            }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-            .then((res) => res.json())
-            .then((response) => {
-              console.log("Google Sheets response:", response);
-            })
-            .catch((err) => {
-              console.error("Error writing to Google Sheets:", err);
-            });
 
-          // Uncomment and use your emailjs code here
-          emailjs
-            .send(
-              "service_hk9vt4i", // replace with your service ID
-              "template_ed3hqbp", // replace with your template ID
-              templateParams,
-              "RXCvCuvaDD6zohMef" // replace with your public key
-            )
-            .then(
-              () => {
-                console.log("Email sent successfully!");
-              },
-              (error) => {
-                console.error("Failed to send email:", error);
-                setErrorMessage(
-                  "Registration successful, but failed to send confirmation email."
-                );
-              }
-            );
-
-          setFormData({
-            particpantFirstName: "",
-            particpantMiddleName: "",
-            particpantLastName: "",
-            mail_id: "",
-            phone_no: "",
-            dob: "",
-            gender: "",
-            fidaID: "",
-            country: "",
-            country_code: "",
-            state: "",
-            city: "",
-            location: "",
-          });
-        },
-        prefill: {
-          name:
-            formData.particpantFirstName +
-            formData.particpantMiddleName +
-            formData.particpantLastName, // Consider using formData.particpantFirstName etc. for prefill
-          email: formData.mail_id, // Consider using an email field from your form
-          contact: formData.phone_no.replace(/^\+91\s?/, ""), // Consider using a phone number field from your form
-        },
-        theme: {
-          color: "#3399cc",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
     } catch (error) {
-      console.error("Payment initiation failed:", error);
-      setErrorMessage("Failed to initiate payment. Please try again.");
+      console.error("Payment processing failed:", error);
+      setErrorMessage("Payment processing failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -548,13 +551,13 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
   }
 
   return (
-    <TournamentRegistrationHandler>
-      <>
-            <Banner
-              heading={"Where young minds test their mettle"}
-              image={"/images/about-banner.jpg"}
-              link={"/"}
-            />
+    <>
+      <Banner
+        heading={"Where young minds test their mettle"}
+        image={"/images/about-banner.jpg"}
+        link={"/"}
+        linkText={"Home"}
+      />
 
             <section className="w-11/12 mx-auto flex md:flex-row flex-col gap-12 md:mt-28 mt-14 mb-12 md:mb-20">
         <div className="md:w-[50%] w-full flex flex-col gap-4">
@@ -602,46 +605,174 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
       </section>
 
       <section className="w-11/12 flex md:flex-row flex-col md:gap-16 gap-10 mx-auto my-10 md:my-28">
-        <div className="md:w-[50%] w-full">
-          <img
-            src="/images/tournament.jpg"
-            alt="ThinQ Chess Tournament Flyer"
-            className="w-full rounded-lg aspect-square object-contain bg-gray-50 p-4"
-          />
-        </div>
-        <div className="md:w-[50%] w-full">
+        {/* Show image if there's an active tournament or upcoming tournament */}
+        {(activeTournament || upcomingTournament) && (
+          <div className="md:w-[50%] w-full">
+            <img
+              src={(activeTournament?.flyer_image || upcomingTournament?.flyer_image) || "/images/tournament.jpg"}
+              alt={`${(activeTournament?.name || upcomingTournament?.name)} Tournament Flyer`}
+              className="w-full rounded-lg aspect-square object-contain bg-gray-50 p-4"
+            />
+            {/* Registration Status Overlay for Upcoming Tournament */}
+            {status?.status === 'upcoming_tournament' && (
+              <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg text-center">
+                <h3 className="text-lg font-bold text-blue-800 mb-2">
+                  🎯 {upcomingTournament?.name || activeTournament?.name}
+                </h3>
+                <p className="text-blue-700 font-medium">
+                  Registration will start from:
+                </p>
+                <p className="text-xl font-bold text-blue-900 mt-1">
+                  {countdownTarget && new Date(countdownTarget).toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+        <div className={(activeTournament || upcomingTournament) ? "md:w-[50%] w-full" : "w-full"}>
           <h2 className="md:mt-0 mt-2 md:text-5xl text-4xl leading-[52px] font-bold text-[#2B3AA0] md:leading-[60px]">
             Tournament Registration
           </h2>
-          <p className="mt-4 text-[14px]">
-            (Registration open at a fee of INR 500)
-          </p>
+
+          {/* Tournament Status Messages */}
+          {status && (
+            <div className={`mt-4 p-4 rounded-lg border ${
+              status.status === 'no_tournaments' ? 'bg-gray-100 border-gray-300 text-gray-700' :
+              status.status === 'upcoming_tournament' ? 'bg-blue-100 border-blue-300 text-blue-700' :
+              status.status === 'tournament_ended' ? 'bg-red-100 border-red-300 text-red-700' :
+              status.status === 'tournament_in_progress' ? 'bg-yellow-100 border-yellow-300 text-yellow-700' :
+              status.status === 'closed' ? 'bg-orange-100 border-orange-300 text-orange-700' :
+              'bg-green-100 border-green-300 text-green-700'
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">
+                  {status.status === 'no_tournaments' ? '' :
+                   status.status === 'upcoming_tournament' ? '⏰' :
+                   status.status === 'tournament_ended' ? '🏁' :
+                   status.status === 'tournament_in_progress' ? '🎯' :
+                   status.status === 'closed' ? '🔒' : '✅'}
+                </span>
+                {/* Hide status message for no_tournaments to avoid duplicate */}
+                {status.status !== 'no_tournaments' && (
+                  <p className="font-medium">{status.message}</p>
+                )}
+              </div>
+
+              {/* Countdown for upcoming tournament */}
+              {status.status === 'upcoming_tournament' && countdownTarget && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-blue-800 mb-2">⏰ Registration starts in:</p>
+                  <TournamentCountdown
+                    targetDate={countdownTarget}
+                    onComplete={() => {
+                      // Refresh tournament status when countdown completes
+                      loadActiveTournament();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+
+
+
           <div className="md:mt-6 mt-6">
             {registrationClosed === true ? (
-              // Registration Closed Message
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-                <div className="text-4xl mb-4">🚧</div>
-                <h3 className="text-xl font-bold text-red-800 mb-3">Registration Closed</h3>
-                <p className="text-red-700 mb-4">{statusMessage}</p>
+              // Different states based on tournament status
+              <div>
+                {/* No Tournaments Available */}
+                {status?.status === 'no_tournaments' && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                    <p className="text-lg text-gray-700 mb-8">No tournaments scheduled at the moment. Please check back later.</p>
 
-                {/* Show countdown if in countdown mode */}
-                {mode === 'countdown' && countdownTarget && (
-                  <div className="mt-6">
-                    <TournamentCountdown
-                      targetDate={countdownTarget}
-                      message="Registration opens in:"
-                    />
+                    <div className="text-5xl mb-4">🏆</div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Tournaments are closed now</h3>
+                    <p className="text-gray-700 mb-8">Please check back later for upcoming tournaments.</p>
+
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <h4 className="font-semibold text-gray-800 mb-4 text-lg">📞 Need Help?</h4>
+                      <div className="text-gray-700 space-y-2">
+                        <p className="text-base">📧 Email: admin@thinqchess.com</p>
+                        <p className="text-base">📱 Phone: +91 7975820187</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Contact info */}
-                <div className="mt-6 pt-4 border-t border-red-200">
-                  <h4 className="font-semibold text-red-800 mb-2">📞 Need Help?</h4>
-                  <div className="text-sm text-red-700">
-                    <p>📧 Email: admin@thinqchess.com</p>
-                    <p>📱 Phone: +91 7975820187</p>
+                {/* Upcoming Tournament with Countdown */}
+                {status?.status === 'upcoming' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+                    <div className="text-4xl mb-4">⏰</div>
+                    <h3 className="text-xl font-bold text-blue-800 mb-3">Registration Opening Soon!</h3>
+                    <p className="text-blue-700 mb-4">{status.message}</p>
+
+                    {status.countdownTarget && (
+                      <div className="mt-6">
+                        <TournamentCountdown
+                          targetDate={status.countdownTarget}
+                          message="Registration opens in:"
+                        />
+                      </div>
+                    )}
+
+                    {status.nextTournament && (
+                      <div className="mt-6 p-4 bg-white rounded-lg">
+                        <h4 className="font-semibold text-blue-800 mb-2">Next Tournament:</h4>
+                        <p className="text-blue-700 font-medium">{status.nextTournament.name}</p>
+                        <p className="text-blue-600 text-sm">{status.nextTournament.description}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-6 pt-4 border-t border-blue-200">
+                      <h4 className="font-semibold text-blue-800 mb-2">📞 Need Help?</h4>
+                      <div className="text-sm text-blue-700">
+                        <p>📧 Email: admin@thinqchess.com</p>
+                        <p>📱 Phone: +91 7975820187</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Registration Closed (Tournament Running) */}
+                {status?.status === 'registration_closed' && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                    <div className="text-4xl mb-4">🏃‍♂️</div>
+                    <h3 className="text-xl font-bold text-yellow-800 mb-3">Tournament in Progress</h3>
+                    <p className="text-yellow-700 mb-4">{status.message}</p>
+
+                    <div className="mt-6 pt-4 border-t border-yellow-200">
+                      <h4 className="font-semibold text-yellow-800 mb-2">📞 Need Help?</h4>
+                      <div className="text-sm text-yellow-700">
+                        <p>📧 Email: admin@thinqchess.com</p>
+                        <p>📱 Phone: +91 7975820187</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {status?.status === 'error' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <div className="text-4xl mb-4">⚠️</div>
+                    <h3 className="text-xl font-bold text-red-800 mb-3">Unable to Load Tournament Status</h3>
+                    <p className="text-red-700 mb-4">{status.message}</p>
+
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               // Registration Form
@@ -711,30 +842,7 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
                 </div>
               </div>
 
-              {/* Tournament Type Selection */}
-              <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
-                <h2 className="text-[18px]">Tournament Type:</h2>
-                <div className="md:w-[300px] w-full">
-                  <select
-                    name="tournament_type"
-                    value={selectedTournamentType}
-                    onChange={handleTournamentTypeChange}
-                    required
-                    className="w-full p-2 border border-[#d3d1d1] rounded focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  >
-                    <option value="">Select Tournament Type</option>
-                    {tournamentTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name} - ₹{type.fee}
-                        {type.age_min || type.age_max ?
-                          ` (Age: ${type.age_min || 'Any'}-${type.age_max || 'Any'})` :
-                          ''
-                        }
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+
 
               {/* Date of Birth */}
               <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
@@ -885,27 +993,30 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
                 </div>
               </div>
 
-              {/* Email-Based Coupon Section */}
-              {emailCouponAvailable && emailCouponInfo && (
-                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-green-800 font-medium">🎉 Special Discount Available!</h3>
-                      <p className="text-green-700 text-sm">
-                        Get {emailCouponInfo.discount_percent}% off with your {emailCouponInfo.prefix} email!
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={generateEmailCoupon}
-                      disabled={generatingCoupon}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
-                    >
-                      {generatingCoupon ? 'Generating...' : 'Get Coupon'}
-                    </button>
-                  </div>
+              {/* Tournament Category Selection */}
+              <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
+                <h2 className="text-[18px]">Tournament Category:</h2>
+                <div className="md:w-[300px] w-full">
+                  <select
+                    name="tournament_type"
+                    value={selectedTournamentType}
+                    onChange={handleTournamentTypeChange}
+                    required
+                    className="w-full p-2 border border-[#d3d1d1] rounded focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                  >
+                    <option value="">Select Tournament Category</option>
+                    {tournamentTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                        {type.age_min || type.age_max ?
+                          ` (Age: ${type.age_min || 'Any'}-${type.age_max || 'Any'})` :
+                          ''
+                        }
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              )}
+              </div>
 
               {/* Discount Code Section */}
               <div className="mt-6">
@@ -983,8 +1094,7 @@ const Tournaments = ({ registrationClosed = false, statusMessage = "", countdown
           </div>
         </div>
       </section>
-      </>
-    </TournamentRegistrationHandler>
+    </>
   );
 };
 

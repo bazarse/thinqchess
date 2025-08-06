@@ -14,61 +14,100 @@ const BookADemo = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const sendEmail = (values) => {
+  const sendEmail = async (values) => {
     setIsSubmitting(true);
-    const templateParams = {
-      parent_name: values.parentName,
-      email: values.email,
-      contact_number: `+${values.phone}`,
-      child_name: values.childName,
-      age: values.Age,
-      any_past_training: values.programLevel,
-      state: values.state,
-      country: values.country,
-      message: values.message || "",
-    };
 
-    const FORM_WEB_APP_URL =
-      "https://script.google.com/macros/s/AKfycbx-JQRROEdTU9KDqbeA4EDEFsnPCg4xJGzEtbHPVOGQZ14Qm7-f5wmG9HIA8_c27vtI/exec";
+    try {
+      // First save to database
+      const demoRequestData = {
+        parent_name: values.parentName,
+        email: values.email,
+        phone: values.phone,
+        child_name: values.childName,
+        age: values.Age,
+        past_training: values.programLevel,
+        state: values.state,
+        country: values.country,
+        message: values.message || "",
+      };
 
-    fetch("/api/submit", {
-      method: "POST",
-      body: JSON.stringify({
-        webAppUrl: FORM_WEB_APP_URL,
-        templateParams,
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        console.log("Google Sheets response:", response);
-      })
-      .catch((err) => {
-        console.error("Error writing to Google Sheets:", err);
+      const databaseResponse = await fetch('/api/demo-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(demoRequestData),
       });
 
-    emailjs
-      .send(
-        "service_hk9vt4i", // replace with your service ID
-        "template_tznhe4n", // replace with your template ID
-        templateParams,
-        "RXCvCuvaDD6zohMef" // replace with your public key
-      )
-      .then(
-        () => {
-          message.success("Message sent successfully!");
-          formRef.current.resetFields();
-          setSuccesMessage("Thank you we will get back to you with a slot.");
-          setIsSubmitting(false);
+      if (databaseResponse.ok) {
+        console.log('✅ Demo request saved to database');
+      } else {
+        console.error('❌ Failed to save to database');
+      }
+
+      // Prepare template params for email and Google Sheets
+      const templateParams = {
+        parent_name: values.parentName,
+        email: values.email,
+        contact_number: `+${values.phone}`,
+        child_name: values.childName,
+        age: values.Age,
+        any_past_training: values.programLevel,
+        state: values.state,
+        country: values.country,
+        message: values.message || "",
+      };
+
+      // Save to Google Sheets (backup)
+      const FORM_WEB_APP_URL =
+        "https://script.google.com/macros/s/AKfycbx-JQRROEdTU9KDqbeA4EDEFsnPCg4xJGzEtbHPVOGQZ14Qm7-f5wmG9HIA8_c27vtI/exec";
+
+      fetch("/api/submit", {
+        method: "POST",
+        body: JSON.stringify({
+          webAppUrl: FORM_WEB_APP_URL,
+          templateParams,
+        }),
+        headers: {
+          "Content-Type": "application/json",
         },
-        (error) => {
-          message.error("Failed to send message. Try again later.");
-          setErrorMessage("There is an error submitting the form", error);
-          setIsSubmitting(false);
-        }
-      );
+      })
+        .then((res) => res.json())
+        .then((response) => {
+          console.log("Google Sheets response:", response);
+        })
+        .catch((err) => {
+          console.error("Error writing to Google Sheets:", err);
+        });
+
+      // Send email notification
+      emailjs
+        .send(
+          "service_hk9vt4i", // replace with your service ID
+          "template_tznhe4n", // replace with your template ID
+          templateParams,
+          "RXCvCuvaDD6zohMef" // replace with your public key
+        )
+        .then(
+          () => {
+            message.success("Demo request submitted successfully!");
+            formRef.current.resetFields();
+            setSuccesMessage("Thank you! Your demo request has been submitted. We will get back to you with a slot.");
+            setIsSubmitting(false);
+          },
+          (error) => {
+            message.error("Failed to send notification. But your request is saved.");
+            setErrorMessage("There was an error sending the notification, but your demo request has been saved.");
+            setIsSubmitting(false);
+          }
+        );
+
+    } catch (error) {
+      console.error('Error submitting demo request:', error);
+      message.error("Failed to submit demo request. Please try again.");
+      setErrorMessage("There was an error submitting your demo request. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
   return (

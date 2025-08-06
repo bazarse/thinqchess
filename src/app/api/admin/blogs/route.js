@@ -2,48 +2,19 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Development mode - return mock blog data
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const mockBlogs = [
-        {
-          id: 1,
-          title: 'Chess Strategies for Beginners',
-          slug: 'chess-strategies-for-beginners',
-          content: 'Learn the fundamental chess strategies that every beginner should know...',
-          featured_image: '/images/blog/chess-strategies.jpg',
-          status: 'published',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          title: 'Tournament Preparation Guide',
-          slug: 'tournament-preparation-guide',
-          content: 'How to prepare mentally and strategically for chess tournaments...',
-          featured_image: '/images/blog/tournament-prep.jpg',
-          status: 'published',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 3,
-          title: 'Famous Chess Openings Explained',
-          slug: 'famous-chess-openings-explained',
-          content: 'Explore the most popular chess openings and when to use them...',
-          featured_image: '/images/blog/chess-openings.jpg',
-          status: 'draft',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
+    // Get blogs from SQLite
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-      return NextResponse.json(mockBlogs);
-    }
+    const blogs = db.prepare('SELECT * FROM blogs ORDER BY created_at DESC').all();
 
-    // Production mode with database
-    const { getAllBlogs } = await import('../../../../../lib/db.js');
-    const blogs = await getAllBlogs();
-    return NextResponse.json(blogs);
+    // Parse tags if they're stored as JSON strings
+    const blogsWithParsedTags = blogs.map(blog => ({
+      ...blog,
+      tags: blog.tags ? (typeof blog.tags === 'string' ? JSON.parse(blog.tags) : blog.tags) : []
+    }));
+
+    return NextResponse.json(blogsWithParsedTags);
 
   } catch (error) {
     console.error('Error fetching blogs:', error);
@@ -57,7 +28,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { title, content, featured_image, status } = body;
+    const { title, content, excerpt, featured_image, status, tags, author } = body;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -72,35 +43,40 @@ export async function POST(request) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Development mode - simulate creating blog
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const newBlog = {
-        id: Date.now(),
-        title,
-        slug,
-        content,
-        featured_image: featured_image || '',
-        status: status || 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+    // Check if slug already exists
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-      return NextResponse.json({
-        success: true,
-        message: 'Blog created successfully (development mode)',
-        blog: newBlog
-      });
+    const existingBlog = db.prepare('SELECT id FROM blogs WHERE slug = ?').get(slug);
+    if (existingBlog) {
+      return NextResponse.json(
+        { error: 'A blog with this title already exists' },
+        { status: 400 }
+      );
     }
 
-    // Production mode with database
-    const { createBlog } = await import('../../../../../lib/db.js');
-    const newBlog = await createBlog({
+    // Insert new blog
+    const insertStmt = db.prepare(`
+      INSERT INTO blogs (title, content, excerpt, slug, author, status, tags, featured_image)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const result = insertStmt.run(
       title,
-      slug,
       content,
-      featured_image: featured_image || '',
-      status: status || 'draft'
-    });
+      excerpt || '',
+      slug,
+      author || 'Admin',
+      status || 'draft',
+      JSON.stringify(tags || []),
+      featured_image || ''
+    );
+
+    // Get the created blog
+    const newBlog = db.prepare('SELECT * FROM blogs WHERE id = ?').get(result.lastInsertRowid);
+
+    // Parse tags for response
+    newBlog.tags = newBlog.tags ? JSON.parse(newBlog.tags) : [];
 
     return NextResponse.json({
       success: true,
@@ -120,12 +96,24 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, title, content, featured_image, status } = body;
+    const { id, title, content, excerpt, featured_image, status, tags, author } = body;
 
     if (!id || !title || !content) {
       return NextResponse.json(
         { error: 'ID, title and content are required' },
         { status: 400 }
+      );
+    }
+
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
+
+    // Check if blog exists
+    const existingBlog = db.prepare('SELECT * FROM blogs WHERE id = ?').get(id);
+    if (!existingBlog) {
+      return NextResponse.json(
+        { error: 'Blog not found' },
+        { status: 404 }
       );
     }
 
@@ -135,34 +123,40 @@ export async function PUT(request) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Development mode - simulate updating blog
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const updatedBlog = {
-        id,
-        title,
-        slug,
-        content,
-        featured_image: featured_image || '',
-        status: status || 'draft',
-        updated_at: new Date().toISOString()
-      };
-
-      return NextResponse.json({
-        success: true,
-        message: 'Blog updated successfully (development mode)',
-        blog: updatedBlog
-      });
+    // Check if slug already exists for a different blog
+    const slugExists = db.prepare('SELECT id FROM blogs WHERE slug = ? AND id != ?').get(slug, id);
+    if (slugExists) {
+      return NextResponse.json(
+        { error: 'A blog with this title already exists' },
+        { status: 400 }
+      );
     }
 
-    // Production mode with database
-    const { updateBlog } = await import('../../../../../lib/db.js');
-    const updatedBlog = await updateBlog(id, {
+    // Update blog
+    const updateStmt = db.prepare(`
+      UPDATE blogs
+      SET title = ?, content = ?, excerpt = ?, slug = ?, author = ?,
+          status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+
+    updateStmt.run(
       title,
-      slug,
       content,
-      featured_image: featured_image || '',
-      status: status || 'draft'
-    });
+      excerpt || '',
+      slug,
+      author || 'Admin',
+      status || 'draft',
+      JSON.stringify(tags || []),
+      featured_image || '',
+      id
+    );
+
+    // Get updated blog
+    const updatedBlog = db.prepare('SELECT * FROM blogs WHERE id = ?').get(id);
+
+    // Parse tags for response
+    updatedBlog.tags = updatedBlog.tags ? JSON.parse(updatedBlog.tags) : [];
 
     return NextResponse.json({
       success: true,
@@ -191,17 +185,11 @@ export async function DELETE(request) {
       );
     }
 
-    // Development mode - simulate deletion
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      return NextResponse.json({
-        success: true,
-        message: 'Blog deleted successfully (development mode)'
-      });
-    }
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-    // Production mode with database
-    const { deleteBlog } = await import('../../../../../lib/db.js');
-    await deleteBlog(parseInt(id));
+    // Delete blog
+    db.prepare('DELETE FROM blogs WHERE id = ?').run(id);
 
     return NextResponse.json({
       success: true,

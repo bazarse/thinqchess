@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import SupabaseImageUpload from "../../../components/SupabaseImageUpload";
+
 
 const BlogManagement = () => {
   const [posts, setPosts] = useState([]);
@@ -12,8 +14,11 @@ const BlogManagement = () => {
     content: '',
     excerpt: '',
     status: 'draft',
-    tags: ''
+    tags: '',
+    featured_image: ''
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [message, setMessage] = useState('');
 
   // Sample blog posts
   const samplePosts = [
@@ -50,26 +55,85 @@ const BlogManagement = () => {
   ];
 
   useEffect(() => {
-    setPosts(samplePosts);
+    loadBlogs();
   }, []);
 
-  const handleCreatePost = (e) => {
+  const loadBlogs = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/admin/blogs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch blogs');
+      }
+
+      const blogs = await response.json();
+      setPosts(blogs);
+      setMessage('');
+    } catch (error) {
+      console.error('Error loading blogs:', error);
+      setMessage('Error loading blogs');
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!newPost.title || !newPost.content) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const post = {
-      id: Date.now(),
-      ...newPost,
-      created_at: new Date().toISOString().split('T')[0],
-      author: 'Admin'
-    };
+    try {
+      const response = await fetch('/api/admin/blogs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newPost.title,
+          content: newPost.content,
+          excerpt: newPost.excerpt || newPost.content.substring(0, 150) + "...",
+          status: newPost.status || 'draft',
+          tags: newPost.tags ? newPost.tags.split(',').map(tag => tag.trim()) : [],
+          author: 'Admin',
+          featured_image: newPost.featured_image || ''
+        }),
+      });
 
-    setPosts([post, ...posts]);
-    setNewPost({ title: '', content: '', excerpt: '', status: 'draft', tags: '' });
-    setShowCreateForm(false);
+      const data = await response.json();
+
+      if (data.success) {
+        setPosts([data.blog, ...posts]);
+        setMessage('Blog post created successfully!');
+      } else {
+        setMessage(data.error || "Failed to create blog post");
+      }
+
+      setNewPost({ title: '', content: '', excerpt: '', status: 'draft', tags: '', featured_image: '' });
+      setShowCreateForm(false);
+      setEditingPost(null);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error creating blog:', error);
+      setMessage('Error creating blog post');
+    }
+  };
+
+  const handleImageUpload = (uploadResult) => {
+    setNewPost(prev => ({
+      ...prev,
+      featured_image: uploadResult.url
+    }));
+    setMessage('Featured image uploaded successfully!');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handleImageUploadError = (error) => {
+    setMessage(`Image upload error: ${error}`);
+    setTimeout(() => setMessage(''), 5000);
   };
 
   const handleEditPost = (post) => {
@@ -84,37 +148,119 @@ const BlogManagement = () => {
     setShowCreateForm(true);
   };
 
-  const handleUpdatePost = (e) => {
+  const handleUpdatePost = async (e) => {
     e.preventDefault();
     if (!newPost.title || !newPost.content) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const updatedPosts = posts.map(post =>
-      post.id === editingPost.id
-        ? { ...post, ...newPost, updated_at: new Date().toISOString().split('T')[0] }
-        : post
-    );
+    try {
+      const response = await fetch('/api/admin/blogs', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingPost.id,
+          title: newPost.title,
+          content: newPost.content,
+          excerpt: newPost.excerpt || newPost.content.substring(0, 150) + "...",
+          status: newPost.status || 'draft',
+          tags: newPost.tags ? newPost.tags.split(',').map(tag => tag.trim()) : [],
+          author: 'Admin',
+          featured_image: newPost.featured_image || ''
+        }),
+      });
 
-    setPosts(updatedPosts);
-    setNewPost({ title: '', content: '', excerpt: '', status: 'draft', tags: '' });
-    setShowCreateForm(false);
-    setEditingPost(null);
-  };
+      const data = await response.json();
 
-  const deletePost = (id) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post.id !== id));
+      if (data.success) {
+        const updatedPosts = posts.map(post =>
+          post.id === editingPost.id ? data.blog : post
+        );
+        setPosts(updatedPosts);
+        setMessage('Blog post updated successfully!');
+      } else {
+        setMessage(data.error || "Failed to update blog post");
+      }
+
+      setNewPost({ title: '', content: '', excerpt: '', status: 'draft', tags: '', featured_image: '' });
+      setShowCreateForm(false);
+      setEditingPost(null);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating blog:', error);
+      setMessage('Error updating blog post');
     }
   };
 
-  const toggleStatus = (id) => {
-    setPosts(posts.map(post =>
-      post.id === id
-        ? { ...post, status: post.status === 'published' ? 'draft' : 'published' }
-        : post
-    ));
+  const deletePost = async (id) => {
+    if (confirm('Are you sure you want to delete this post?')) {
+      try {
+        const response = await fetch(`/api/admin/blogs?id=${id}`, {
+          method: 'DELETE',
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setPosts(posts.filter(post => post.id !== id));
+          setMessage('Blog post deleted successfully!');
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          setMessage(data.error || "Failed to delete blog post");
+          setTimeout(() => setMessage(''), 5000);
+        }
+      } catch (error) {
+        console.error('Error deleting blog:', error);
+        setMessage('Error deleting blog post');
+        setTimeout(() => setMessage(''), 5000);
+      }
+    }
+  };
+
+  const toggleStatus = async (id) => {
+    const post = posts.find(p => p.id === id);
+    if (!post) return;
+
+    const newStatus = post.status === 'published' ? 'draft' : 'published';
+
+    try {
+      const response = await fetch('/api/admin/blogs', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          excerpt: post.excerpt,
+          status: newStatus,
+          tags: post.tags || [],
+          author: post.author,
+          featured_image: post.featured_image
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPosts(posts.map(p =>
+          p.id === id ? { ...p, status: newStatus } : p
+        ));
+        setMessage(`Blog post ${newStatus === 'published' ? 'published' : 'unpublished'} successfully!`);
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.error || "Failed to update blog status");
+        setTimeout(() => setMessage(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error updating blog status:', error);
+      setMessage('Error updating blog status');
+      setTimeout(() => setMessage(''), 5000);
+    }
   };
 
   const cancelEdit = () => {
@@ -225,6 +371,35 @@ const BlogManagement = () => {
               />
             </div>
 
+            {/* Featured Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Featured Image</label>
+              {newPost.featured_image && (
+                <div className="mb-4">
+                  <img
+                    src={newPost.featured_image}
+                    alt="Featured"
+                    className="w-32 h-32 object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setNewPost({...newPost, featured_image: ''})}
+                    className="mt-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Remove Image
+                  </button>
+                </div>
+              )}
+              <SupabaseImageUpload
+                uploadType="blog"
+                blogSlug={newPost.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled'}
+                onUploadComplete={handleImageUpload}
+                onUploadError={handleImageUploadError}
+                maxSize={5}
+                className="mb-4"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Content *</label>
               <textarea
@@ -253,6 +428,17 @@ const BlogManagement = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Success/Error Message */}
+      {message && (
+        <div className={`rounded-xl p-4 ${
+          message.includes('successfully') || message.includes('uploaded')
+            ? 'bg-green-100 text-green-800 border border-green-200'
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          {message}
         </div>
       )}
 

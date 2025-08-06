@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import SimpleImageUpload from "../../../components/SimpleImageUpload";
 
 const BlogManagement = () => {
   const [user, setUser] = useState(null);
@@ -205,13 +206,28 @@ const BlogManagement = () => {
 
               {/* Featured Image */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Featured Image URL</label>
-                <input
-                  type="url"
-                  value={blogForm.featured_image}
-                  onChange={(e) => setBlogForm(prev => ({ ...prev, featured_image: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  placeholder="https://example.com/image.jpg"
+                <label className="block text-sm font-medium text-gray-700 mb-2">Featured Image</label>
+                {blogForm.featured_image && (
+                  <div className="mb-4">
+                    <img
+                      src={blogForm.featured_image}
+                      alt="Featured"
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setBlogForm(prev => ({ ...prev, featured_image: '' }))}
+                      className="mt-2 text-sm text-red-600 hover:text-red-800"
+                    >
+                      Remove Image
+                    </button>
+                  </div>
+                )}
+                <SimpleImageUpload
+                  onUploadComplete={(result) => setBlogForm(prev => ({ ...prev, featured_image: result.url }))}
+                  onUploadError={(error) => setMessage(`Image upload error: ${error}`)}
+                  maxSize={5}
+                  uploadText="Upload featured image"
                 />
               </div>
 
@@ -267,38 +283,22 @@ const BlogManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <a href="/admin/dashboard" className="text-[#2B3AA0] hover:text-[#FFB31A] mr-4">
-                ← Dashboard
-              </a>
-              <h1 className="text-2xl font-bold text-[#2B3AA0]">Blog Management</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleNewBlog}
-                className="bg-[#2B3AA0] hover:bg-[#1e2a70] text-white px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                + New Blog
-              </button>
-              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Blog Management</h1>
+            <p className="text-gray-600">Create and manage blog posts</p>
           </div>
+          <button
+            onClick={handleNewBlog}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            + New Blog
+          </button>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto py-6 sm:px-6 lg:px-8">
+      </div>
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-bold text-gray-900">All Blogs ({blogs.length})</h2>
@@ -371,7 +371,6 @@ const BlogManagement = () => {
             {message}
           </div>
         )}
-      </main>
     </div>
   );
 };

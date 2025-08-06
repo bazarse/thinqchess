@@ -2,52 +2,11 @@ import { NextResponse } from 'next/server';
 
 async function handleGalleryRequest() {
   try {
-    // Development mode - return mock gallery data
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const mockGallery = [
-        {
-          id: 1,
-          image_url: '/images/gallery/tournament1.jpg',
-          image_name: 'Tournament Championship 2024',
-          display_order: 1,
-          uploaded_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          image_url: '/images/gallery/students1.jpg',
-          image_name: 'Young Chess Masters',
-          display_order: 2,
-          uploaded_at: new Date().toISOString()
-        },
-        {
-          id: 3,
-          image_url: '/images/gallery/coaching1.jpg',
-          image_name: 'Coaching Session',
-          display_order: 3,
-          uploaded_at: new Date().toISOString()
-        },
-        {
-          id: 4,
-          image_url: '/images/gallery/awards1.jpg',
-          image_name: 'Award Ceremony',
-          display_order: 4,
-          uploaded_at: new Date().toISOString()
-        }
-      ];
+    // Always use database
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-      const response = NextResponse.json(mockGallery);
-
-      // Add caching headers
-      response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
-      response.headers.set('CDN-Cache-Control', 'public, s-maxage=300');
-      response.headers.set('Vercel-CDN-Cache-Control', 'public, s-maxage=300');
-
-      return response;
-    }
-
-    // Production mode with database
-    const { getAllGalleryImages } = await import('../../../../../lib/db.js');
-    const images = await getAllGalleryImages();
+    const images = db.prepare('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC').all();
 
     const response = NextResponse.json(images);
 
@@ -83,30 +42,23 @@ export async function POST(request) {
       );
     }
 
-    // Development mode - simulate adding image
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      const newImage = {
-        id: Date.now(),
-        image_url,
-        image_name,
-        display_order: display_order || 0,
-        uploaded_at: new Date().toISOString()
-      };
+    // Always use database
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-      return NextResponse.json({
-        success: true,
-        message: 'Image added successfully (development mode)',
-        image: newImage
-      });
-    }
+    const insertStmt = db.prepare(`
+      INSERT INTO gallery_images (image_name, image_url, display_order, uploaded_at)
+      VALUES (?, ?, ?, ?)
+    `);
 
-    // Production mode with database
-    const { addGalleryImage } = await import('../../../../../lib/db.js');
-    const newImage = await addGalleryImage({
-      image_url,
+    const result = insertStmt.run(
       image_name,
-      display_order: display_order || 0
-    });
+      image_url,
+      display_order || 0,
+      new Date().toISOString()
+    );
+
+    const newImage = db.prepare('SELECT * FROM gallery_images WHERE id = ?').get(result.lastInsertRowid);
 
     return NextResponse.json({
       success: true,
@@ -135,17 +87,16 @@ export async function PUT(request) {
       );
     }
 
-    // Development mode - simulate reordering
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      return NextResponse.json({
-        success: true,
-        message: 'Image order updated successfully (development mode)'
-      });
-    }
+    // Always use database
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-    // Production mode with database
-    const { updateGalleryImageOrder } = await import('../../../../../lib/db.js');
-    await updateGalleryImageOrder(imageOrders);
+    // Update display order for each image
+    const updateStmt = db.prepare('UPDATE gallery_images SET display_order = ? WHERE id = ?');
+
+    for (const { id, display_order } of imageOrders) {
+      updateStmt.run(display_order, id);
+    }
 
     return NextResponse.json({
       success: true,
@@ -173,17 +124,12 @@ export async function DELETE(request) {
       );
     }
 
-    // Development mode - simulate deletion
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      return NextResponse.json({
-        success: true,
-        message: 'Image deleted successfully (development mode)'
-      });
-    }
+    // Always use database
+    const { getDB } = require('../../../../../lib/database.js');
+    const db = getDB();
 
-    // Production mode with database
-    const { deleteGalleryImage } = await import('../../../../../lib/db.js');
-    await deleteGalleryImage(parseInt(id));
+    const deleteStmt = db.prepare('DELETE FROM gallery_images WHERE id = ?');
+    deleteStmt.run(parseInt(id));
 
     return NextResponse.json({
       success: true,

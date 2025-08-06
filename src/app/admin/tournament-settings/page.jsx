@@ -157,95 +157,15 @@ const TournamentSettings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <a href="/admin/dashboard" className="text-[#2B3AA0] hover:text-[#FFB31A] mr-4">
-                ← Dashboard
-              </a>
-              <h1 className="text-2xl font-bold text-[#2B3AA0]">Tournament Settings</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="space-y-6">
       {/* Main Content */}
       <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-[#2B3AA0] mb-8 text-center">
-            🏆 Tournament Configuration
-          </h1>
 
           <div className="space-y-8">
-            {/* Fee Settings */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">
-                💰 Fee Structure
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tournament Fee (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.tournament_fee}
-                    onChange={(e) => handleChange('tournament_fee', parseFloat(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                    placeholder="400"
-                    min="0"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">Fee for tournament participation</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Registration Fee (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.registration_fee}
-                    onChange={(e) => handleChange('registration_fee', parseFloat(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                    placeholder="500"
-                    min="0"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">Fee for course registration</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Participant Limit */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">
-                👥 Participant Management
-              </h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Maximum Participants
-                </label>
-                <input
-                  type="number"
-                  value={settings.max_participants}
-                  onChange={(e) => handleChange('max_participants', parseInt(e.target.value) || 0)}
-                  className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  placeholder="52"
-                  min="1"
-                />
-                <p className="text-sm text-gray-600 mt-1">Maximum number of tournament participants allowed</p>
-              </div>
-            </div>
+
+
 
             {/* Tournament Types */}
             <div className="border border-gray-200 rounded-lg p-6">
@@ -347,51 +267,9 @@ const TournamentSettings = () => {
               </div>
             </div>
 
-            {/* Countdown Timer */}
-            <div className="border border-gray-200 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">
-                ⏰ Registration Deadline
-              </h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Registration End Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={settings.countdown_end_date}
-                  onChange={(e) => handleChange('countdown_end_date', e.target.value)}
-                  className="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                />
-                <p className="text-sm text-gray-600 mt-1">
-                  Set when tournament registration should automatically close
-                </p>
-              </div>
-            </div>
 
-            {/* Current Status */}
-            <div className="border border-gray-200 rounded-lg p-6 bg-blue-50">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">
-                📊 Current Status
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-900">Tournament Fee</h3>
-                  <p className="text-2xl font-bold text-[#2B3AA0]">₹{settings.tournament_fee}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-900">Registration Fee</h3>
-                  <p className="text-2xl font-bold text-[#2B3AA0]">₹{settings.registration_fee}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-900">Max Participants</h3>
-                  <p className="text-2xl font-bold text-[#2B3AA0]">{settings.max_participants}</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg">
-                  <h3 className="font-medium text-gray-900">Registration Status</h3>
-                  <p className="text-lg font-bold text-green-600">Active</p>
-                </div>
-              </div>
-            </div>
+
+
 
             {/* Save Button */}
             <div className="text-center">
