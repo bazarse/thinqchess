@@ -8,7 +8,7 @@ export async function GET() {
     const db = getDB();
 
     // Auto-update tournament status based on dates using utility function
-    const updateResults = await updateTournamentStatus(db);
+    await updateTournamentStatus(db);
 
     const tournaments = await db.prepare('SELECT * FROM tournaments ORDER BY created_at DESC').all();
 
