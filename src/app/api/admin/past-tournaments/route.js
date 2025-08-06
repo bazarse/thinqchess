@@ -1,37 +1,24 @@
 import { NextResponse } from 'next/server';
+import { getCompletedTournaments } from '../../../../../lib/tournament-utils.js';
+import { tournamentStatusMiddleware } from '../../../../../lib/tournament-scheduler.js';
 
 export async function GET() {
   try {
-    // Get completed tournaments from SQLite
+    // Get completed tournaments from SQLite with auto-status update
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
 
-    // Get tournaments with status 'completed'
-    const tournaments = db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY end_date DESC').all('completed');
+    // Auto-update tournament status using middleware
+    const updateResults = tournamentStatusMiddleware(db, true); // Force update for past tournaments
 
-    // Get registrations for each tournament
-    const tournamentsWithRegistrations = tournaments.map(tournament => {
-      const registrations = db.prepare('SELECT * FROM registrations WHERE tournament_id = ? ORDER BY registered_at DESC').all(tournament.id);
-      return {
-        ...tournament,
-        registrations: registrations || []
-      };
-    });
+    // Use the utility function to get completed tournaments with registrations
+    const tournamentsWithStats = getCompletedTournaments(db);
 
-    // Calculate stats for each tournament
-    const tournamentsWithStats = tournamentsWithRegistrations.map(tournament => {
-      const registrations = tournament.registrations || [];
-      const completedRegistrations = registrations.filter(reg => reg.payment_status === 'completed');
+    console.log(`📊 Found ${tournamentsWithStats.length} completed tournaments`);
 
-      return {
-        ...tournament,
-        total_registrations: completedRegistrations.length,
-        total_revenue: completedRegistrations.reduce((sum, reg) => sum + (parseFloat(reg.amount_paid) || 0), 0),
-        registrations: completedRegistrations.map(reg => ({
-          ...reg,
-          participant_name: `${reg.participant_first_name} ${reg.participant_last_name}`
-        }))
-      };
+    // Log registration counts for debugging
+    tournamentsWithStats.forEach(tournament => {
+      console.log(`Tournament: ${tournament.name} - Registrations: ${tournament.total_registrations}`);
     });
 
     return NextResponse.json({

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getTournamentsByStatus, getAllTournaments } from '../../../../../lib/sqlite-operations.js';
+import { updateTournamentStatus } from '../../../../lib/tournament-utils.js';
 
 export async function GET() {
   try {
+    // Auto-update tournament status first
+    const { getDB } = require('../../../../lib/database.js');
+    const db = getDB();
+    updateTournamentStatus(db);
+
     // Get active and upcoming tournaments from SQLite
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 

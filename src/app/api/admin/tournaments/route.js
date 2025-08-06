@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 
 // GET - Fetch all tournaments
 export async function GET() {
@@ -6,21 +7,8 @@ export async function GET() {
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
 
-    // Auto-update tournament status based on dates
-    const today = new Date().toISOString().split('T')[0];
-
-    // Move tournaments to completed if their end_date has passed
-    // Only update if end_date column exists
-    try {
-      db.prepare(`
-        UPDATE tournaments
-        SET status = 'completed'
-        WHERE end_date < ? AND status != 'completed'
-      `).run(today);
-    } catch (error) {
-      // Column might not exist, skip auto-update
-      console.log('Auto-update skipped: end_date column not found');
-    }
+    // Auto-update tournament status based on dates using utility function
+    const updateResults = updateTournamentStatus(db);
 
     const tournaments = db.prepare('SELECT * FROM tournaments ORDER BY created_at DESC').all();
 

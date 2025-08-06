@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
+import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 
 // GET - Fetch active tournament for frontend
 export async function GET() {
   try {
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
-    
+
+    // Auto-update tournament status first
+    updateTournamentStatus(db);
+
     // Get the active tournament
     const activeTournament = db.prepare('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1').get();
     
