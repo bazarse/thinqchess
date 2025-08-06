@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get blogs from SQLite
+    // Get blogs from PostgreSQL
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
 
-    const blogs = db.prepare('SELECT * FROM blogs ORDER BY created_at DESC').all();
+    const blogs = await db.prepare('SELECT * FROM blogs ORDER BY created_at DESC').all();
 
     // Parse tags if they're stored as JSON strings
     const blogsWithParsedTags = blogs.map(blog => ({

@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    // Save demo request to SQLite
+    // Save demo request to PostgreSQL
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
 
@@ -21,30 +21,29 @@ export async function POST(request) {
       }
     }
 
-    // Insert demo request into SQLite
+    // Insert demo request into PostgreSQL
     const insertStmt = db.prepare(`
       INSERT INTO demo_requests (
-        parent_name, email, phone, child_name, age, past_training,
-        state, country, message, status, demo_completed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        parent_name, email, phone, child_name, age, chess_experience,
+        state, country, message, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
     `);
 
-    const result = insertStmt.run(
+    const result = await insertStmt.run(
       body.parent_name,
       body.email,
       body.phone,
       body.child_name,
       parseInt(body.age) || null,
-      body.past_training || null,
+      body.chess_experience || body.past_training || null,
       body.state || null,
       body.country || null,
       body.message || null,
-      'pending', // Default status
-      0 // Demo not completed initially
+      'pending' // Default status
     );
 
     // Get the created demo request
-    const savedRequest = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(result.lastInsertRowid);
+    const savedRequest = await db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(result.lastInsertRowid);
 
     console.log('✅ Demo Request Saved:', savedRequest);
 

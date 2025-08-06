@@ -4,15 +4,15 @@ import { tournamentStatusMiddleware } from '../../../../../lib/tournament-schedu
 
 export async function GET() {
   try {
-    // Get completed tournaments from SQLite with auto-status update
+    // Get completed tournaments from PostgreSQL with auto-status update
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
 
     // Auto-update tournament status using middleware
-    const updateResults = tournamentStatusMiddleware(db, true); // Force update for past tournaments
+    const updateResults = await tournamentStatusMiddleware(db, true); // Force update for past tournaments
 
     // Use the utility function to get completed tournaments with registrations
-    const tournamentsWithStats = getCompletedTournaments(db);
+    const tournamentsWithStats = await getCompletedTournaments(db);
 
     console.log(`📊 Found ${tournamentsWithStats.length} completed tournaments`);
 

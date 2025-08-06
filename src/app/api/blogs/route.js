@@ -7,26 +7,26 @@ export async function GET(request) {
     const status = searchParams.get('status') || 'published';
     const limit = parseInt(searchParams.get('limit')) || 50;
     
-    // Get published blogs from SQLite
+    // Get published blogs from PostgreSQL
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
-    
+
     let query = 'SELECT * FROM blogs';
     let params = [];
-    
+
     if (status) {
       query += ' WHERE status = ?';
       params.push(status);
     }
-    
+
     query += ' ORDER BY created_at DESC';
-    
+
     if (limit) {
       query += ' LIMIT ?';
       params.push(limit);
     }
-    
-    const blogs = db.prepare(query).all(...params);
+
+    const blogs = await db.prepare(query).all(...params);
     
     // Parse tags if they're stored as JSON strings
     const blogsWithParsedTags = blogs.map(blog => ({
