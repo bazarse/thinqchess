@@ -4,11 +4,11 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 // POST - Manually trigger tournament status update
 export async function POST() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const { SimpleDB } = await import('../../../../../lib/simple-db.js');
+    const db = new SimpleDB();
 
     // Update tournament status
-    const results = updateTournamentStatus(db);
+    const results = await updateTournamentStatus(db);
 
     return NextResponse.json({
       success: true,
@@ -32,11 +32,11 @@ export async function POST() {
 // GET - Check tournament status and return current state
 export async function GET() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const { SimpleDB } = await import('../../../../../lib/simple-db.js');
+    const db = new SimpleDB();
 
     // Update tournament status first
-    const results = updateTournamentStatus(db);
+    const results = await updateTournamentStatus(db);
 
     // Get current tournament counts by status
     const statusCounts = {
@@ -47,11 +47,9 @@ export async function GET() {
     };
 
     try {
-      const counts = db.prepare(`
-        SELECT status, COUNT(*) as count 
-        FROM tournaments 
-        GROUP BY status
-      `).all();
+      const counts = await db.all(
+        "SELECT status, COUNT(*) as count FROM tournaments GROUP BY status"
+      );
 
       counts.forEach(row => {
         if (statusCounts.hasOwnProperty(row.status)) {
