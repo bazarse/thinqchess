@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 // DELETE - Delete specific registration
 export async function DELETE(request, { params }) {
   try {
-    const { SimpleDB } = await import('../../../../../../lib/simple-db.js');
-    const db = new SimpleDB();
+    const SimpleDatabase = (await import('../../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
     const resolvedParams = await params;
     const registrationId = resolvedParams.id;
 

@@ -4,8 +4,8 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 // POST - Manually trigger tournament status update
 export async function POST() {
   try {
-    const { SimpleDB } = await import('../../../../../lib/simple-db.js');
-    const db = new SimpleDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Update tournament status
     const results = await updateTournamentStatus(db);
@@ -32,8 +32,8 @@ export async function POST() {
 // GET - Check tournament status and return current state
 export async function GET() {
   try {
-    const { SimpleDB } = await import('../../../../../lib/simple-db.js');
-    const db = new SimpleDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Update tournament status first
     const results = await updateTournamentStatus(db);
