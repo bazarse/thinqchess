@@ -1,32 +1,40 @@
 import { NextResponse } from 'next/server';
-import { updateTournamentStatus } from '../../../../lib/tournament-utils.js';
 
 export async function GET() {
   try {
-    // Auto-update tournament status first
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
-    await updateTournamentStatus(db);
+    // Use SimpleDB for Vercel compatibility
+    const { SimpleDB } = await import('../../../../lib/simple-db.js');
+    const db = new SimpleDB();
 
-    // Get active and upcoming tournaments from PostgreSQL
-    const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Auto-update tournament status
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    // Update expired tournaments to completed
+    await db.run(
+      "UPDATE tournaments SET status = 'completed' WHERE end_date < ? AND status = 'active'",
+      [currentDate]
+    );
+
+    // Update tournaments that should be active
+    await db.run(
+      "UPDATE tournaments SET status = 'active' WHERE start_date <= ? AND end_date >= ? AND status = 'upcoming'",
+      [currentDate, currentDate]
+    );
 
     // Get active tournaments (currently running)
-    const activeTournamentsResult = await db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY start_date DESC').all('active');
-    const activeTournaments = activeTournamentsResult.filter(tournament => {
-      return tournament.start_date <= currentDate && tournament.end_date >= currentDate;
-    });
+    const activeTournaments = await db.all(
+      "SELECT * FROM tournaments WHERE status = 'active' ORDER BY start_date DESC"
+    );
 
     // Get upcoming tournaments (registration not started yet)
-    const upcomingTournamentsAll = await db.prepare('SELECT * FROM tournaments WHERE status = ? ORDER BY start_date DESC').all('upcoming');
-    const upcomingTournaments = upcomingTournamentsAll.filter(tournament => {
-      return tournament.registration_start_date > currentDate;
-    }).sort((a, b) => new Date(a.registration_start_date) - new Date(b.registration_start_date));
+    const upcomingTournaments = await db.all(
+      "SELECT * FROM tournaments WHERE status = 'upcoming' ORDER BY start_date ASC"
+    );
 
     // Get tournaments with open registration (registration period active)
-    const openRegistrationTournaments = upcomingTournamentsAll.filter(tournament => {
-      return tournament.registration_start_date <= currentDate && tournament.registration_end_date >= currentDate;
-    });
+    const openRegistrationTournaments = await db.all(
+      "SELECT * FROM tournaments WHERE status = 'active' AND is_active = 1 ORDER BY start_date DESC"
+    );
 
     // Determine tournament status
     let tournamentStatus = {
