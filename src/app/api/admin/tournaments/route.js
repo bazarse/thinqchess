@@ -37,7 +37,11 @@ export async function GET() {
 // POST - Create new tournament
 export async function POST(request) {
   try {
+    console.log('🏆 Creating new tournament...');
+
     const body = await request.json();
+    console.log('📝 Tournament data received:', body);
+
     const {
       name,
       description,
@@ -53,20 +57,24 @@ export async function POST(request) {
 
     // Validate required fields
     if (!name) {
+      console.error('❌ Tournament name is missing');
       return NextResponse.json(
         { error: 'Tournament name is required' },
         { status: 400 }
       );
     }
 
+    console.log('💾 Connecting to database...');
     const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
 
     // If this tournament is being set as active, deactivate all others
     if (is_active) {
+      console.log('🔄 Deactivating other tournaments...');
       await db.run('UPDATE tournaments SET is_active = 0');
     }
 
+    console.log('➕ Inserting new tournament...');
     // Insert new tournament
     const result = await db.run(`
       INSERT INTO tournaments (
@@ -86,6 +94,8 @@ export async function POST(request) {
       new Date().toISOString()
     ]);
 
+    console.log('✅ Tournament insert result:', result);
+
     // Create response with tournament data
     const newTournament = {
       id: result.lastInsertRowid || Date.now(),
@@ -101,7 +111,7 @@ export async function POST(request) {
       created_at: new Date().toISOString()
     };
 
-    console.log('✅ Tournament created successfully:', newTournament);
+    console.log('🎉 Tournament created successfully:', newTournament);
 
     return NextResponse.json({
       success: true,
@@ -110,9 +120,15 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error creating tournament:', error);
+    console.error('💥 Error creating tournament:', error);
+    console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
+
     return NextResponse.json(
-      { error: 'Failed to create tournament' },
+      {
+        error: 'Failed to create tournament',
+        details: error.message
+      },
       { status: 500 }
     );
   }

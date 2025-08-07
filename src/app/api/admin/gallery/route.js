@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 
 async function handleGalleryRequest() {
   try {
+    console.log('🖼️ Fetching gallery images...');
+
     // Always use SimpleDB
     const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
 
-    const images = await db.all('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC');
+    const images = await db.all('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC') || [];
+
+    console.log(`📸 Found ${images.length} gallery images:`, images);
 
     const response = NextResponse.json(images);
 
@@ -18,11 +22,9 @@ async function handleGalleryRequest() {
     return response;
 
   } catch (error) {
-    console.error('Error fetching gallery images:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch gallery images' },
-      { status: 500 }
-    );
+    console.error('💥 Error fetching gallery images:', error);
+    // Return empty array instead of error
+    return NextResponse.json([]);
   }
 }
 
