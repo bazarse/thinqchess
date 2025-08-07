@@ -654,7 +654,6 @@ const Tournaments = () => {
               {/* Countdown for upcoming tournament */}
               {status.status === 'upcoming_tournament' && countdownTarget && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-blue-800 mb-2">⏰ Registration starts in:</p>
                   <TournamentCountdown
                     targetDate={countdownTarget}
                     onComplete={() => {
