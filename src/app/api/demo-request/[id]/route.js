@@ -12,13 +12,13 @@ export async function DELETE(request, { params }) {
     }
 
     // Get database connection
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     console.log('🗑️ Deleting demo request with ID:', id);
 
     // Check if the demo request exists
-    const existingRequest = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existingRequest = await db.get('SELECT * FROM demo_requests WHERE id = ?', [id]);
 
     if (!existingRequest) {
       return NextResponse.json(
@@ -28,8 +28,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Delete the demo request
-    const deleteStmt = db.prepare('DELETE FROM demo_requests WHERE id = ?');
-    const result = deleteStmt.run(id);
+    const result = await db.run('DELETE FROM demo_requests WHERE id = ?', [id]);
 
     if (result.changes === 0) {
       return NextResponse.json(
@@ -66,13 +65,13 @@ export async function GET(request, { params }) {
     }
 
     // Get database connection
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     console.log('📋 Fetching demo request with ID:', id);
 
     // Get the demo request
-    const request = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const request = await db.get('SELECT * FROM demo_requests WHERE id = ?', [id]);
     
     if (!request) {
       return NextResponse.json(

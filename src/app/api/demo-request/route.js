@@ -4,9 +4,9 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
-    // Save demo request to SQLite
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    // Save demo request to SimpleDB
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     console.log('📝 Demo Request Data Received:', body);
 
@@ -21,15 +21,13 @@ export async function POST(request) {
       }
     }
 
-    // Insert demo request into SQLite
-    const insertStmt = db.prepare(`
+    // Insert demo request into SimpleDB
+    const result = await db.run(`
       INSERT INTO demo_requests (
         parent_name, email, phone, child_name, age, chess_experience,
-        state, country, message, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+        state, country, message, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
       body.parent_name,
       body.email,
       body.phone,
@@ -39,11 +37,12 @@ export async function POST(request) {
       body.state || null,
       body.country || null,
       body.message || null,
-      'pending' // Default status
-    );
+      'pending', // Default status
+      new Date().toISOString()
+    ]);
 
     // Get the created demo request
-    const savedRequest = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(result.lastInsertRowid);
+    const savedRequest = await db.get('SELECT * FROM demo_requests WHERE id = ?', [result.lastInsertRowid]);
 
     console.log('✅ Demo Request Saved:', savedRequest);
 
@@ -69,8 +68,8 @@ export async function POST(request) {
 // GET - Fetch all demo requests (for admin)
 export async function GET(request) {
   try {
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -168,8 +167,8 @@ export async function GET(request) {
     params.push(limit, offset);
 
     // Execute queries
-    const requests = db.prepare(query).all(...params);
-    const totalResult = db.prepare(countQuery).all(...params.slice(0, -2)); // Remove limit and offset for count
+    const requests = await db.all(query, params);
+    const totalResult = await db.all(countQuery, params.slice(0, -2)); // Remove limit and offset for count
     const total = totalResult[0].total;
 
     // Calculate pagination info
@@ -212,11 +211,11 @@ export async function PUT(request) {
       );
     }
 
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if demo request exists
-    const existing = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM demo_requests WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Demo request not found' },
@@ -225,16 +224,15 @@ export async function PUT(request) {
     }
 
     // Update demo request
-    const updateStmt = db.prepare(`
+    const result = await db.run(`
       UPDATE demo_requests
-      SET status = ?, updated_at = CURRENT_TIMESTAMP
+      SET status = ?, updated_at = ?
       WHERE id = ?
-    `);
-
-    const result = updateStmt.run(
+    `, [
       status || existing.status,
+      new Date().toISOString(),
       id
-    );
+    ]);
 
     if (result.changes === 0) {
       return NextResponse.json(
@@ -244,7 +242,7 @@ export async function PUT(request) {
     }
 
     // Get updated demo request
-    const updated = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const updated = await db.get('SELECT * FROM demo_requests WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,

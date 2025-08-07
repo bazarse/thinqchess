@@ -77,7 +77,7 @@ export async function POST(request) {
 
       // Use environment variables for admin credentials
       const adminEmail = process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || 'admin';
-      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+      const adminPassword = process.env.ADMIN_PASSWORD || '1234';
 
       if (email === adminEmail && password === adminPassword) {
         console.log('Valid admin credentials from environment');
