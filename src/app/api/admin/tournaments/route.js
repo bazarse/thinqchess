@@ -53,21 +53,21 @@ export async function POST(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // If this tournament is being set as active, deactivate all others
     if (is_active) {
-      db.prepare('UPDATE tournaments SET is_active = 0').run();
+      await db.run('UPDATE tournaments SET is_active = 0');
     }
 
     // Insert new tournament
-    const result = db.prepare(`
+    const result = await db.run(`
       INSERT INTO tournaments (
         name, description, start_date, end_date,
-        registration_start_date, registration_end_date, flyer_image, is_active, categories
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+        registration_start_date, registration_end_date, flyer_image, is_active, categories, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
       name,
       description || '',
       tournament_date || start_date || '2024-12-31', // Use tournament_date or fallback to start_date
@@ -76,11 +76,12 @@ export async function POST(request) {
       registration_end || null,
       flyer_image || '',
       is_active ? 1 : 0,
-      categories || '[]'
-    );
+      categories || '[]',
+      new Date().toISOString()
+    ]);
 
     // Get the created tournament
-    const newTournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(result.lastInsertRowid);
+    const newTournament = await db.get('SELECT * FROM tournaments WHERE id = ?', [result.lastInsertRowid]);
 
     console.log('✅ Tournament created successfully:', newTournament);
 
@@ -138,17 +139,17 @@ export async function PUT(request) {
 
     // If this tournament is being set as active, deactivate all others
     if (is_active) {
-      db.prepare('UPDATE tournaments SET is_active = 0').run();
+      await db.run('UPDATE tournaments SET is_active = 0');
     }
 
     // Update tournament
-    db.prepare(`
+    await db.run(`
       UPDATE tournaments
       SET name = ?, description = ?, start_date = ?, end_date = ?,
           registration_start_date = ?, registration_end_date = ?, flyer_image = ?,
-          is_active = ?, categories = ?, updated_at = CURRENT_TIMESTAMP
+          is_active = ?, categories = ?, updated_at = ?
       WHERE id = ?
-    `).run(
+    `, [
       name || existing.name,
       description !== undefined ? description : existing.description,
       tournament_date !== undefined ? tournament_date : (start_date !== undefined ? start_date : existing.start_date),
@@ -158,8 +159,9 @@ export async function PUT(request) {
       flyer_image !== undefined ? flyer_image : existing.flyer_image,
       is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
       categories !== undefined ? categories : existing.categories,
+      new Date().toISOString(),
       id
-    );
+    ]);
 
     // Get updated tournament
     const updatedTournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
