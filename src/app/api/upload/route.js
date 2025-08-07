@@ -14,44 +14,53 @@ export async function POST(request) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 });
+    // Validate file size (max 1MB for better performance)
+    if (file.size > 1 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 1MB' }, { status: 400 });
     }
-
-    // Convert file to base64 for storage (Vercel compatible)
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString('base64');
-    const dataUrl = `data:${file.type};base64,${base64}`;
 
     const timestamp = Date.now();
     const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${timestamp}_${originalName}`;
 
-    // Store the image data in SimpleDB for persistence
     try {
-      const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
-      const db = new SimpleDatabase();
+      // Convert file to base64 for storage (Vercel compatible)
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64 = buffer.toString('base64');
+      const dataUrl = `data:${file.type};base64,${base64}`;
 
-      // Store image in uploaded_files table
-      await db.run(`
-        INSERT INTO uploaded_files (filename, original_name, file_type, file_size, data_url, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `, [filename, file.name, file.type, file.size, dataUrl, new Date().toISOString()]);
+      console.log(`✅ Image converted to base64: ${filename} (${file.size} bytes)`);
 
-      console.log(`✅ Real image uploaded and stored: ${filename}`);
-    } catch (dbError) {
-      console.error('Database storage error:', dbError);
-      // Continue with base64 URL even if DB storage fails
+      return NextResponse.json({
+        success: true,
+        url: dataUrl,
+        filename: filename,
+        message: 'Image uploaded successfully!'
+      });
+
+    } catch (conversionError) {
+      console.error('Base64 conversion error:', conversionError);
+
+      // Fallback to existing placeholder images if conversion fails
+      const placeholderImages = [
+        '/images/chess-tournament.webp',
+        '/images/tournament-flyer.jpg',
+        '/images/tournament.jpg',
+        '/images/offline-students-playing.jpg',
+        '/images/online-program.jpg',
+        '/images/course-offered.jpg'
+      ];
+
+      const randomPlaceholder = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+
+      return NextResponse.json({
+        success: true,
+        url: randomPlaceholder,
+        filename: filename,
+        message: 'Using placeholder image (conversion failed)'
+      });
     }
-
-    return NextResponse.json({
-      success: true,
-      url: dataUrl,
-      filename: filename,
-      message: 'Real image uploaded successfully!'
-    });
 
   } catch (error) {
     console.error('Error uploading file:', error);

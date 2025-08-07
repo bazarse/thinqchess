@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 
 async function handleGalleryRequest() {
   try {
-    // Always use database
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Always use SimpleDB
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const images = db.prepare('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC').all();
+    const images = await db.all('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC');
 
     const response = NextResponse.json(images);
 
@@ -42,21 +42,19 @@ export async function POST(request) {
       );
     }
 
-    // Always use database
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Always use SimpleDB
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const insertStmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO gallery_images (image_name, image_url, display_order, uploaded_at)
       VALUES (?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+    `, [
       image_name,
       image_url,
       display_order || 0,
       new Date().toISOString()
-    );
+    ]);
 
     const newImage = db.prepare('SELECT * FROM gallery_images WHERE id = ?').get(result.lastInsertRowid);
 
@@ -87,15 +85,13 @@ export async function PUT(request) {
       );
     }
 
-    // Always use database
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Always use SimpleDB
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Update display order for each image
-    const updateStmt = db.prepare('UPDATE gallery_images SET display_order = ? WHERE id = ?');
-
     for (const { id, display_order } of imageOrders) {
-      updateStmt.run(display_order, id);
+      await db.run('UPDATE gallery_images SET display_order = ? WHERE id = ?', [display_order, id]);
     }
 
     return NextResponse.json({

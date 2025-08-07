@@ -12,25 +12,23 @@ export async function POST(request) {
       );
     }
 
-    // Save to SQLite database
-    const { getDB } = require('../../../../../../lib/database.js');
-    const db = getDB();
+    // Save to SimpleDB database
+    const SimpleDatabase = (await import('../../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Insert into gallery_images table
-    const insertStmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO gallery_images (image_name, image_url, display_order, uploaded_at)
       VALUES (?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+    `, [
       image_name,
       image_url,
       0, // Default display order
       new Date().toISOString()
-    );
+    ]);
 
     // Get the created image
-    const newImage = db.prepare('SELECT * FROM gallery_images WHERE id = ?').get(result.lastInsertRowid);
+    const newImage = await db.get('SELECT * FROM gallery_images WHERE id = ?', [result.lastInsertRowid]);
 
     return NextResponse.json({
       success: true,
