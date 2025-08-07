@@ -24,6 +24,8 @@ export async function GET() {
 
       if (upcomingTournament) {
         const startDate = new Date(upcomingTournament.start_date);
+        // Set time to 12:00 AM (midnight)
+        startDate.setHours(0, 0, 0, 0);
         return NextResponse.json({
           success: true,
           message: 'Upcoming tournament found',
@@ -67,7 +69,12 @@ export async function GET() {
     // Check if registration hasn't started yet (only if registration_start_date is actually set)
     else if (registrationStart && activeTournament.registration_start_date && now < registrationStart) {
       registrationStatus = 'upcoming_tournament';
-      statusMessage = `Registration opens on ${registrationStart.toLocaleDateString()}`;
+      statusMessage = `Registration opens on ${registrationStart.toLocaleDateString('en-IN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })}`;
     }
     // Check if registration has ended
     else if (registrationEnd && now > registrationEnd) {
@@ -96,7 +103,10 @@ export async function GET() {
     // Set countdown target based on registration status
     let countdownTarget = null;
     if (registrationStatus === 'upcoming_tournament' && registrationStart) {
-      countdownTarget = registrationStart.toISOString();
+      // Set time to 12:00 AM (midnight) for countdown
+      const countdownDate = new Date(registrationStart);
+      countdownDate.setHours(0, 0, 0, 0);
+      countdownTarget = countdownDate.toISOString();
     }
 
     // Parse tournament categories if they exist
