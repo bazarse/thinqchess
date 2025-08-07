@@ -1,23 +1,25 @@
 import { NextResponse } from 'next/server';
-import { verifyAdminToken } from '../../../../../lib/adminAuth.js';
+import jwt from 'jsonwebtoken';
 
 export async function GET(request) {
   try {
-    const admin = verifyAdminToken(request);
-    
-    if (!admin) {
+    const token = request.cookies.get('admin-token')?.value;
+
+    if (!token) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       );
     }
 
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'thinqchess-secret-key-2024');
+
     return NextResponse.json({
       success: true,
       user: {
-        email: admin.email,
-        role: admin.role,
-        id: admin.id
+        email: decoded.email,
+        role: decoded.role,
+        id: decoded.id
       }
     });
   } catch (error) {
