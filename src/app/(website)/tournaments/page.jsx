@@ -620,10 +620,10 @@ const Tournaments = () => {
               className="w-full rounded-lg aspect-square object-contain bg-gray-50 p-4"
             />
             {/* Registration Status Overlay for Upcoming Tournament */}
-            {status?.status === 'upcoming_tournament' && upcomingTournament && upcomingTournament.name !== 'demo' && (
+            {status?.status === 'upcoming_tournament' && (
               <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg text-center">
                 <h3 className="text-lg font-bold text-blue-800 mb-2">
-                  🎯 {upcomingTournament?.name}
+                  🎯 {upcomingTournament?.name || activeTournament?.name}
                 </h3>
                 <p className="text-blue-700 font-medium">
                   Registration will start from:
