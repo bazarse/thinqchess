@@ -64,8 +64,8 @@ export async function GET() {
       registrationStatus = 'tournament_ended';
       statusMessage = 'Tournament has ended';
     }
-    // Check if registration hasn't started yet
-    else if (registrationStart && now < registrationStart) {
+    // Check if registration hasn't started yet (only if registration_start_date is actually set)
+    else if (registrationStart && activeTournament.registration_start_date && now < registrationStart) {
       registrationStatus = 'upcoming_tournament';
       statusMessage = `Registration opens on ${registrationStart.toLocaleDateString()}`;
     }
