@@ -645,8 +645,8 @@ const Tournaments = () => {
                    status.status === 'tournament_in_progress' ? '🎯' :
                    status.status === 'closed' ? '🔒' : '✅'}
                 </span>
-                {/* Hide status message for no_tournaments to avoid duplicate */}
-                {status.status !== 'no_tournaments' && (
+                {/* Hide status message for no_tournaments and upcoming_tournament to avoid duplicate */}
+                {status.status !== 'no_tournaments' && status.status !== 'upcoming_tournament' && (
                   <p className="font-medium">{status.message}</p>
                 )}
               </div>
@@ -654,7 +654,6 @@ const Tournaments = () => {
               {/* Countdown for upcoming tournament */}
               {status.status === 'upcoming_tournament' && countdownTarget && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-blue-800 mb-2">⏰ Registration starts in:</p>
                   <TournamentCountdown
                     targetDate={countdownTarget}
                     onComplete={() => {
