@@ -131,46 +131,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a
-            href="/admin/registrations"
-            className="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            <span className="text-2xl mr-3">👥</span>
-            <div>
-              <p className="font-medium text-blue-800">Registrations</p>
-              <p className="text-sm text-blue-600">Manage registrations</p>
-            </div>
-          </a>
 
-          <a
-            href="/admin/blog"
-            className="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
-          >
-            <span className="text-2xl mr-3">📝</span>
-            <div>
-              <p className="font-medium text-purple-800">Blogs</p>
-              <p className="text-sm text-purple-600">Manage blog posts</p>
-            </div>
-          </a>
-
-          <a
-            href="/admin/discount-codes"
-            className="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-          >
-            <span className="text-2xl mr-3">🎫</span>
-            <div>
-              <p className="font-medium text-green-800">Discount Codes</p>
-              <p className="text-sm text-green-600">Manage discounts</p>
-            </div>
-          </a>
-
-
-        </div>
-      </div>
     </div>
   );
 };

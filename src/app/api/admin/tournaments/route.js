@@ -5,11 +5,12 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 export async function GET() {
   try {
     // Auto-update tournament status based on dates using utility function
-    updateTournamentStatus();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
-    const tournaments = db.prepare('SELECT * FROM tournaments ORDER BY created_at DESC').all();
+    await updateTournamentStatus(db);
+
+    const tournaments = await db.all('SELECT * FROM tournaments ORDER BY created_at DESC');
 
     console.log('📋 Fetched tournaments:', tournaments.length, 'tournaments');
 
@@ -123,11 +124,11 @@ export async function PUT(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if tournament exists
-    const existing = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM tournaments WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Tournament not found' },

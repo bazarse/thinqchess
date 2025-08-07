@@ -4,12 +4,9 @@ import { tournamentStatusMiddleware } from '../../../../../lib/tournament-schedu
 
 export async function GET() {
   try {
-    // Get completed tournaments from PostgreSQL with auto-status update
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
-
-    // Auto-update tournament status using middleware
-    const updateResults = await tournamentStatusMiddleware(db, true); // Force update for past tournaments
+    // Get completed tournaments from SimpleDB with auto-status update
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Use the utility function to get completed tournaments with registrations
     const tournamentsWithStats = await getCompletedTournaments(db);
