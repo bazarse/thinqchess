@@ -28,26 +28,26 @@ export async function GET() {
     const pendingDemos = await db.get('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?', ['pending']) || { count: 0 };
 
     // Get pending demo requests (last 5)
-    const pendingDemoRequests = await db.prepare(`
+    const pendingDemoRequests = await db.all(`
       SELECT parent_name, child_name, email, age, message, created_at
       FROM demo_requests
-      WHERE status = 'pending'
+      WHERE status = ?
       ORDER BY created_at DESC
       LIMIT 5
-    `).all();
-    
+    `, ['pending']) || [];
+
     // Calculate revenue (completed payments)
-    const totalRevenue = db.prepare('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?').get('completed') || { total: 0 };
+    const totalRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { total: 0 };
 
     // Get completed registrations count
-    const completedRegistrations = db.prepare('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?').get('completed') || { count: 0 };
-    
+    const completedRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { count: 0 };
+
     // Get registration stats by type
-    const registrationsByType = db.prepare(`
-      SELECT type, COUNT(*) as count 
-      FROM tournament_registrations 
+    const registrationsByType = await db.all(`
+      SELECT type, COUNT(*) as count
+      FROM tournament_registrations
       GROUP BY type
-    `).all();
+    `) || [];
     
     return NextResponse.json({
       success: true,
