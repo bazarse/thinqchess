@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 // GET - Fetch all registrations
 export async function GET(request) {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
     
     // Get query parameters
     const { searchParams } = new URL(request.url);

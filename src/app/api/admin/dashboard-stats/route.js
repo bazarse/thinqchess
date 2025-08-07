@@ -2,30 +2,30 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get dashboard statistics from PostgreSQL
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Get dashboard statistics from SimpleDB
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Get total registrations
-    const totalRegistrations = await db.prepare('SELECT COUNT(*) as count FROM tournament_registrations').get();
+    const totalRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations') || { count: 0 };
 
     // Get total blogs
-    const totalBlogs = await db.prepare('SELECT COUNT(*) as count FROM blogs').get();
+    const totalBlogs = await db.get('SELECT COUNT(*) as count FROM blogs') || { count: 0 };
 
     // Get published blogs
-    const publishedBlogs = await db.prepare('SELECT COUNT(*) as count FROM blogs WHERE status = ?').get('published');
+    const publishedBlogs = await db.get('SELECT COUNT(*) as count FROM blogs WHERE status = ?', ['published']) || { count: 0 };
 
     // Get total gallery images
-    const totalGalleryImages = await db.prepare('SELECT COUNT(*) as count FROM gallery_images').get();
+    const totalGalleryImages = await db.get('SELECT COUNT(*) as count FROM gallery_images') || { count: 0 };
 
     // Get total discount codes
-    const totalDiscountCodes = await db.prepare('SELECT COUNT(*) as count FROM discount_codes').get();
+    const totalDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes') || { count: 0 };
 
     // Get active discount codes
-    const activeDiscountCodes = await db.prepare('SELECT COUNT(*) as count FROM discount_codes WHERE is_active = true').get();
+    const activeDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes WHERE is_active = 1') || { count: 0 };
 
     // Get pending demo requests count
-    const pendingDemos = await db.prepare('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?').get('pending');
+    const pendingDemos = await db.get('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?', ['pending']) || { count: 0 };
 
     // Get pending demo requests (last 5)
     const pendingDemoRequests = await db.prepare(`
