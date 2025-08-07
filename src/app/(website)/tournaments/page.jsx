@@ -619,27 +619,7 @@ const Tournaments = () => {
               alt={`${(activeTournament?.name || upcomingTournament?.name)} Tournament Flyer`}
               className="w-full rounded-lg aspect-square object-contain bg-gray-50 p-4"
             />
-            {/* Registration Status Overlay for Upcoming Tournament */}
-            {status?.status === 'upcoming_tournament' && (
-              <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg text-center">
-                <h3 className="text-lg font-bold text-blue-800 mb-2">
-                  🎯 {upcomingTournament?.name || activeTournament?.name}
-                </h3>
-                <p className="text-blue-700 font-medium">
-                  Registration will start from:
-                </p>
-                <p className="text-xl font-bold text-blue-900 mt-1">
-                  {countdownTarget && new Date(countdownTarget).toLocaleDateString('en-IN', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
-              </div>
-            )}
+            {/* Registration Status Overlay for Upcoming Tournament - REMOVED */}
           </div>
         )}
         <div className={(activeTournament || upcomingTournament) ? "md:w-[50%] w-full" : "w-full"}>
