@@ -4,23 +4,24 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 // GET - Fetch active tournament for frontend
 export async function GET() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Use SimpleDatabase instead of old database.js
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Auto-update tournament status first
-    updateTournamentStatus();
+    await updateTournamentStatus(db);
 
     // Get the active tournament
-    const activeTournament = db.prepare('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1').get();
+    const activeTournament = await db.get('SELECT * FROM tournaments WHERE is_active = 1 LIMIT 1');
     
     if (!activeTournament) {
       // Check for upcoming tournaments
-      const upcomingTournament = db.prepare(`
+      const upcomingTournament = await db.get(`
         SELECT * FROM tournaments
         WHERE start_date > datetime('now')
         ORDER BY start_date ASC
         LIMIT 1
-      `).get();
+      `);
 
       if (upcomingTournament) {
         const startDate = new Date(upcomingTournament.start_date);
@@ -31,7 +32,12 @@ export async function GET() {
           hasUpcomingTournament: true,
           upcomingTournament,
           countdownTarget: startDate.toISOString(),
-          statusMessage: `Next tournament: ${upcomingTournament.name} starts on ${startDate.toLocaleDateString()}`
+          statusMessage: `Next registration starts from ${startDate.toLocaleDateString('en-IN', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}`
         });
       }
 
@@ -76,9 +82,10 @@ export async function GET() {
     }
 
     // Get current registration count
-    const registrationCountResult = db.prepare(
-      'SELECT COUNT(*) as count FROM tournament_registrations WHERE tournament_id = ?'
-    ).get(activeTournament.id);
+    const registrationCountResult = await db.get(
+      'SELECT COUNT(*) as count FROM tournament_registrations WHERE tournament_id = ?',
+      [activeTournament.id]
+    );
 
     const currentRegistrations = registrationCountResult ? parseInt(registrationCountResult.count) : 0;
     
