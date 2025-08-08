@@ -238,11 +238,11 @@ export async function DELETE(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if tournament exists
-    const existing = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM tournaments WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Tournament not found' },
@@ -254,13 +254,20 @@ export async function DELETE(request) {
       console.log(`🗑️ Deleting tournament with ID: ${id}`);
 
       // Delete related registrations first
-      db.prepare('DELETE FROM registrations WHERE tournament_id = ?').run(id);
-      db.prepare('DELETE FROM tournament_registrations WHERE tournament_id = ?').run(id);
+      await db.run('DELETE FROM registrations WHERE tournament_id = ?', [id]);
+      await db.run('DELETE FROM tournament_registrations WHERE tournament_id = ?', [id]);
 
-      // Delete tournament
-      const result = db.prepare('DELETE FROM tournaments WHERE id = ?').run(id);
+      // Delete tournament - use specific ID to avoid deleting multiple tournaments
+      const result = await db.run('DELETE FROM tournaments WHERE id = ?', [id]);
 
-      console.log(`✅ Tournament ${id} deleted successfully. Rows affected: ${result.changes}`);
+      console.log(`✅ Tournament ${id} deleted successfully. Changes: ${result.changes}`);
+
+      if (result.changes === 0) {
+        return NextResponse.json(
+          { error: 'Tournament not found or already deleted' },
+          { status: 404 }
+        );
+      }
 
     } catch (deleteError) {
       console.error('Error during deletion:', deleteError);

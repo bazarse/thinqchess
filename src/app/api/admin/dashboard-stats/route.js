@@ -6,7 +6,7 @@ export async function GET() {
     const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
 
-    // Get total registrations
+    // Get total registrations (all registrations, not just completed)
     const totalRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations') || { count: 0 };
 
     // Get total blogs
@@ -52,7 +52,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       stats: {
-        totalRegistrations: completedRegistrations.count || 0, // Use completed registrations instead of all
+        totalRegistrations: totalRegistrations.count || 0, // Show all registrations, not just completed
         totalBlogs: totalBlogs.count || 0,
         publishedBlogs: publishedBlogs.count || 0,
         totalGalleryImages: totalGalleryImages.count || 0,

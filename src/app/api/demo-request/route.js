@@ -25,8 +25,8 @@ export async function POST(request) {
     const result = await db.run(`
       INSERT INTO demo_requests (
         parent_name, email, phone, child_name, age, chess_experience,
-        state, country, message, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        state, country, message, status, demo_completed, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       body.parent_name,
       body.email,
@@ -38,6 +38,7 @@ export async function POST(request) {
       body.country || null,
       body.message || null,
       'pending', // Default status
+      0, // Default demo_completed = 0 (false)
       new Date().toISOString()
     ]);
 
@@ -226,10 +227,11 @@ export async function PUT(request) {
     // Update demo request
     const result = await db.run(`
       UPDATE demo_requests
-      SET status = ?, updated_at = ?
+      SET status = ?, demo_completed = ?, updated_at = ?
       WHERE id = ?
     `, [
       status || existing.status,
+      demo_completed !== undefined ? demo_completed : existing.demo_completed,
       new Date().toISOString(),
       id
     ]);
@@ -276,11 +278,12 @@ export async function DELETE(request) {
       );
     }
 
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    // Use the same SimpleDatabase as other handlers in this module for consistency
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if demo request exists
-    const existing = db.prepare('SELECT * FROM demo_requests WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM demo_requests WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Demo request not found' },
@@ -289,9 +292,9 @@ export async function DELETE(request) {
     }
 
     // Delete the demo request
-    const result = db.prepare('DELETE FROM demo_requests WHERE id = ?').run(id);
+    const result = await db.run('DELETE FROM demo_requests WHERE id = ?', [id]);
 
-    if (result.changes === 0) {
+    if (!result || result.changes === 0) {
       return NextResponse.json(
         { error: 'Failed to delete demo request' },
         { status: 500 }

@@ -37,11 +37,10 @@ const TournamentManagement = () => {
   useEffect(() => {
     fetchTournaments();
 
-    // Set up real-time updates every 30 seconds
-    const interval = setInterval(fetchTournaments, 30000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
+    // NOTE: Auto-refresh disabled to prevent scroll jump while editing/creating
+    // If you want to re-enable periodic refresh, uncomment below and ensure scroll position is preserved.
+    // const interval = setInterval(fetchTournaments, 30000);
+    // return () => clearInterval(interval);
   }, []);
 
   const fetchTournaments = async () => {
@@ -348,7 +347,7 @@ const TournamentManagement = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: tournament.status || 'upcoming',
-          is_active: !tournament.is_active ? 1 : 0
+          is_active: tournament.is_active ? 0 : 1  // Fixed: toggle logic was inverted
         }),
       });
 
@@ -356,12 +355,16 @@ const TournamentManagement = () => {
       if (data.success) {
         // Refresh tournaments to get updated active states
         fetchTournaments();
-        setMessage(`Tournament ${!tournament.is_active ? 'activated' : 'deactivated'} successfully!`);
+        setMessage(`Tournament ${tournament.is_active ? 'deactivated' : 'activated'} successfully!`);
         setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(data.error || 'Error updating tournament status');
+        setTimeout(() => setMessage(''), 5000);
       }
     } catch (error) {
       console.error('Error toggling tournament status:', error);
       setMessage('Error updating tournament status');
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
@@ -380,10 +383,16 @@ const TournamentManagement = () => {
         });
 
         if (response.ok) {
-          setMessage('Tournament marked as ended successfully');
-          fetchTournaments();
+          const data = await response.json();
+          if (data.success) {
+            setMessage('Tournament marked as ended successfully');
+            fetchTournaments();
+          } else {
+            setMessage(data.error || 'Error updating tournament status');
+          }
         } else {
-          setMessage('Error updating tournament status');
+          const errorData = await response.json();
+          setMessage(errorData.error || 'Error updating tournament status');
         }
       } catch (error) {
         console.error('Error updating tournament:', error);
@@ -586,6 +595,12 @@ const TournamentManagement = () => {
                       type="text"
                       value={newCategory.name}
                       onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       placeholder="e.g., Under 12"
                     />
@@ -596,6 +611,12 @@ const TournamentManagement = () => {
                       type="number"
                       value={newCategory.fee}
                       onChange={(e) => setNewCategory({...newCategory, fee: e.target.value})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       placeholder="500"
                     />
@@ -606,6 +627,12 @@ const TournamentManagement = () => {
                       type="number"
                       value={newCategory.min_age}
                       onChange={(e) => setNewCategory({...newCategory, min_age: e.target.value})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       placeholder="8"
                     />
@@ -616,6 +643,12 @@ const TournamentManagement = () => {
                       type="number"
                       value={newCategory.max_age}
                       onChange={(e) => setNewCategory({...newCategory, max_age: e.target.value})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       placeholder="12"
                     />
@@ -626,6 +659,12 @@ const TournamentManagement = () => {
                       type="number"
                       value={newCategory.slots}
                       onChange={(e) => setNewCategory({...newCategory, slots: e.target.value})}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCategory();
+                        }
+                      }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       placeholder="50"
                     />
@@ -694,7 +733,7 @@ const TournamentManagement = () => {
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                {editingTournament ? 'Update Tournament' : 'Tournament'}
+                {editingTournament ? 'Update Tournament' : 'Save'}
               </button>
               <button
                 type="button"

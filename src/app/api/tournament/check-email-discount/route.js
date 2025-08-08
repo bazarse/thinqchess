@@ -12,8 +12,8 @@ export async function POST(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     const emailParts = email.split('@');
     const emailUsername = emailParts[0].toLowerCase();
@@ -23,10 +23,10 @@ export async function POST(request) {
     console.log('📧 Email parts:', { username: emailUsername, domain: emailDomain });
 
     // Find matching prefix codes
-    const prefixCodes = db.prepare(`
-      SELECT * FROM discount_codes 
+    const prefixCodes = await db.all(`
+      SELECT * FROM discount_codes
       WHERE code_type = 'prefix' AND is_active = 1 AND used_count < usage_limit
-    `).all();
+    `);
 
     console.log('📋 Available prefix codes:', prefixCodes.length);
 
@@ -62,18 +62,16 @@ export async function POST(request) {
         console.log('✅ Match found! Generated code:', generatedCode);
 
         // Check if this specific generated code already exists
-        const existingCode = db.prepare('SELECT id FROM discount_codes WHERE code = ?').get(generatedCode);
-        
+        const existingCode = await db.get('SELECT id FROM discount_codes WHERE code = ?', [generatedCode]);
+
         if (!existingCode) {
           // Create the generated code in database
-          const insertStmt = db.prepare(`
+          await db.run(`
             INSERT INTO discount_codes (
-              code, discount_percent, usage_limit, is_active, code_type, 
+              code, discount_percent, usage_limit, is_active, code_type,
               prefix, email_domain, email_prefix, match_type, used_count
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `);
-
-          insertStmt.run(
+          `, [
             generatedCode,
             prefixCode.discount_percent,
             1, // Single use for generated codes
@@ -84,7 +82,7 @@ export async function POST(request) {
             prefixCode.email_prefix,
             prefixCode.match_type,
             0
-          );
+          ]);
 
           console.log('💾 Generated code saved to database');
         }

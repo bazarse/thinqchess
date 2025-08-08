@@ -535,9 +535,32 @@ const Tournaments = () => {
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <button
                 onClick={() => {
+                  // Reset all form states
                   setPaymentSuccess(false);
                   setPaymentStep(false);
                   setRegistrationData(null);
+
+                  // Clear form data
+                  setFormData({
+                    particpantFirstName: "",
+                    particpantLastName: "",
+                    mail_id: "",
+                    phone_no: "",
+                    dob: "",
+                    gender: "",
+                    country: "",
+                    state: "",
+                    city: "",
+                    tournament_type: selectedTournamentType || "",
+                    discount_code: ""
+                  });
+
+                  // Reset other states
+                  setDiscountData(null);
+                  setFinalAmount(tournamentFee);
+                  setErrorMessage("");
+                  setSuccesMessage("");
+                  setIsAgeValid(true);
                 }}
                 className="bg-[#2B3AA0] hover:bg-[#1e2a70] text-white px-6 py-3 rounded-lg transition-colors"
               >
@@ -628,7 +651,7 @@ const Tournaments = () => {
           </h2>
 
           {/* Tournament Status Messages */}
-          {status && (
+          {status && status.status !== 'no_tournaments' && (
             <div className={`mt-4 p-4 rounded-lg border ${
               status.status === 'no_tournaments' ? 'bg-gray-100 border-gray-300 text-gray-700' :
               status.status === 'upcoming_tournament' ? 'bg-blue-100 border-blue-300 text-blue-700' :
@@ -1013,9 +1036,7 @@ const Tournaments = () => {
                       placeholder="Enter discount code (optional)"
                       className="w-full p-2 border border-[#d3d1d1] rounded focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
                     />
-                    {isValidatingDiscount && (
-                      <p className="text-blue-600 text-sm mt-1">Validating discount code...</p>
-                    )}
+
                     {discountData && (
                       <p className="text-green-600 text-sm mt-1">
                         ✅ {discountData.discount_percent}% discount applied!
