@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,6 +11,8 @@ const GoogleReviews = dynamic(() => import("../../components/GoogleReviews"), {
 });
 
 export default function Home() {
+  const [reviewLocation, setReviewLocation] = useState('jpnagar');
+
   return (
     <>
       {/* Banner */}
@@ -275,7 +278,37 @@ export default function Home() {
             Real reviews from real parents who trust ThinQ Chess Academy for their children's chess education
           </p>
         </div>
-        <GoogleReviews location="JP Nagar" />
+
+        {/* Location Selector for Reviews */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+            <button
+              onClick={() => setReviewLocation('jpnagar')}
+              className={`px-6 py-3 rounded-md font-medium transition-all ${
+                reviewLocation === 'jpnagar'
+                  ? 'bg-[#2B3AA0] text-white shadow-md'
+                  : 'text-gray-600 hover:text-[#2B3AA0]'
+              }`}
+            >
+              JP Nagar Reviews
+            </button>
+            <button
+              onClick={() => setReviewLocation('akshayanagar')}
+              className={`px-6 py-3 rounded-md font-medium transition-all ${
+                reviewLocation === 'akshayanagar'
+                  ? 'bg-[#2B3AA0] text-white shadow-md'
+                  : 'text-gray-600 hover:text-[#2B3AA0]'
+              }`}
+            >
+              Akshayanagar Reviews
+            </button>
+          </div>
+        </div>
+
+        <GoogleReviews
+          location={reviewLocation === 'jpnagar' ? 'JP Nagar' : 'Akshayanagar'}
+          placeId={reviewLocation === 'jpnagar' ? 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM' : 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM'}
+        />
       </section>
     </>
   );

@@ -11,6 +11,7 @@ const ContactUs = () => {
   const [succesMessage, setSuccesMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeLocation, setActiveLocation] = useState('jpnagar');
 
   const sendEmail = (values) => {
     setIsSubmitting(true);
@@ -105,29 +106,57 @@ const ContactUs = () => {
           </div>
         </div>
 
-        {/* Address */}
+        {/* Locations */}
         <div className="px-10 py-10 bg-[#f7f7f7] rounded-lg">
           <div className="px-8 py-8 pb-6 bg-[#FFB31A] w-fit rounded-lg">
             <i className="material-symbols-outlined text-white md:!text-[48px] !text-[32px]">
               location_on
             </i>
           </div>
-          <div className="mt-8 flex flex-col gap-2">
+          <div className="mt-8 flex flex-col gap-6">
             <h4 className="md:text-3xl text-2xl font-bold text-[#2B3AA0]">
-              ThinQ Chess Academy
+              Our Locations
             </h4>
-            <p className="text-gray-700 text-lg">
-              JP Nagar 8th Phase<br />
-              Bangalore, Karnataka
-            </p>
-            <a
-              href="https://www.google.com/maps/place/ThinQ+Chess+-+JP+Nagar+8th+Phase/@12.8705781,77.5771435,17z/data=!4m14!1m7!3m6!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!2sThinQ+Chess+-+JP+Nagar+8th+Phase!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc!3m5!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#2B3AA0] hover:text-[#1e2a70] underline text-sm mt-2"
-            >
-              📍 View on Google Maps
-            </a>
+
+            {/* JP Nagar Location */}
+            <div className="border-l-4 border-[#2B3AA0] pl-4">
+              <h5 className="text-xl font-semibold text-[#2B3AA0] mb-2">
+                JP Nagar 8th Phase
+              </h5>
+              <p className="text-gray-700 text-sm mb-2">
+                JP Nagar 8th Phase<br />
+                Bangalore, Karnataka
+              </p>
+              <a
+                href="https://www.google.com/maps/place/ThinQ+Chess+-+JP+Nagar+8th+Phase/@12.8705781,77.5771435,17z/data=!4m14!1m7!3m6!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!2sThinQ+Chess+-+JP+Nagar+8th+Phase!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc!3m5!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#2B3AA0] hover:text-[#1e2a70] underline text-sm"
+              >
+                📍 View on Google Maps
+              </a>
+            </div>
+
+            {/* Akshayanagar Location */}
+            <div className="border-l-4 border-[#FFB31A] pl-4">
+              <h5 className="text-xl font-semibold text-[#2B3AA0] mb-2">
+                Akshayanagar
+              </h5>
+              <p className="text-gray-700 text-sm mb-2">
+                3rd Floor, Karthikeya Complex<br />
+                Mahaveer Road, Akshayanagar Gardens<br />
+                West, Akshayanagar<br />
+                Bengaluru, Karnataka 560068
+              </p>
+              <a
+                href="https://www.google.com/maps/search/ThinQ+Chess+Akshayanagar+Karthikeya+Complex+Mahaveer+road+Akshayanagar+Gardens+West+Bengaluru+Karnataka+560068"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#2B3AA0] hover:text-[#1e2a70] underline text-sm"
+              >
+                📍 View on Google Maps
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -136,22 +165,74 @@ const ContactUs = () => {
       <section className="w-11/12 mx-auto my-20">
         <div className="text-center mb-8">
           <h2 className="text-4xl md:text-5xl font-bold text-[#2B3AA0] mb-4">
-            Visit Our Academy
+            Visit Our Academies
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Find us at ThinQ Chess Academy in JP Nagar 8th Phase, Bangalore. We're easily accessible and look forward to welcoming you!
+            We have two convenient locations in Bangalore. Choose the one that's closest to you!
           </p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.5736485786764!2d77.57714357358713!3d12.870578117083454!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae6bfb70c1f8fb%3A0x930e1b9af0b9debd!2sThinQ%20Chess%20-%20JP%20Nagar%208th%20Phase!5e0!3m2!1sen!2sin!4v1734567890123!5m2!1sen!2sin"
-            className="w-full h-96 md:h-[500px]"
-            style={{ border: 0 }}
-            allowFullScreen=""
-            loading="lazy"
-            title="ThinQ Chess Academy - JP Nagar 8th Phase Location"
-          ></iframe>
+
+        {/* Location Tabs */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+            <button
+              onClick={() => setActiveLocation('jpnagar')}
+              className={`px-6 py-3 rounded-md font-medium transition-all ${
+                activeLocation === 'jpnagar'
+                  ? 'bg-[#2B3AA0] text-white shadow-md'
+                  : 'text-gray-600 hover:text-[#2B3AA0]'
+              }`}
+            >
+              JP Nagar 8th Phase
+            </button>
+            <button
+              onClick={() => setActiveLocation('akshayanagar')}
+              className={`px-6 py-3 rounded-md font-medium transition-all ${
+                activeLocation === 'akshayanagar'
+                  ? 'bg-[#2B3AA0] text-white shadow-md'
+                  : 'text-gray-600 hover:text-[#2B3AA0]'
+              }`}
+            >
+              Akshayanagar
+            </button>
+          </div>
         </div>
+
+        {/* JP Nagar Map */}
+        {activeLocation === 'jpnagar' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="bg-[#2B3AA0] text-white p-4">
+              <h3 className="text-xl font-semibold">ThinQ Chess - JP Nagar 8th Phase</h3>
+              <p className="text-blue-100">JP Nagar 8th Phase, Bangalore, Karnataka</p>
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.5736485786764!2d77.57714357358713!3d12.870578117083454!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae6bfb70c1f8fb%3A0x930e1b9af0b9debd!2sThinQ%20Chess%20-%20JP%20Nagar%208th%20Phase!5e0!3m2!1sen!2sin!4v1734567890123!5m2!1sen!2sin"
+              className="w-full h-96 md:h-[500px]"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              title="ThinQ Chess Academy - JP Nagar 8th Phase Location"
+            ></iframe>
+          </div>
+        )}
+
+        {/* Akshayanagar Map */}
+        {activeLocation === 'akshayanagar' && (
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="bg-[#FFB31A] text-white p-4">
+              <h3 className="text-xl font-semibold">ThinQ Chess - Akshayanagar</h3>
+              <p className="text-orange-100">3rd Floor, Karthikeya Complex, Mahaveer Road, Akshayanagar Gardens, West, Akshayanagar, Bengaluru, Karnataka 560068</p>
+            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0!2d77.5945!3d12.9279!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU1JzQwLjQiTiA3N8KwMzUnNDAuMiJF!5e0!3m2!1sen!2sin!4v1734567890124!5m2!1sen!2sin"
+              className="w-full h-96 md:h-[500px]"
+              style={{ border: 0 }}
+              allowFullScreen=""
+              loading="lazy"
+              title="ThinQ Chess Academy - Akshayanagar Location"
+            ></iframe>
+          </div>
+        )}
       </section>
 
       <section className="w-11/12 flex md:flex-row flex-col md:gap-16 gap-10 mx-auto my-10 md:my-28 md:mb-10">
