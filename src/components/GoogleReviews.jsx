@@ -148,7 +148,7 @@ const GoogleReviews = ({ location = "JP Nagar" }) => {
 
       <div className="mt-6 text-center">
         <a
-          href={`https://www.google.com/search?q=ThinQ+Chess+Academy+${location}`}
+          href="https://g.page/r/Cb3eufCaGw6TEAI/review"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center px-4 py-2 bg-[#2B3AA0] text-white rounded-lg hover:bg-[#1e2a70] transition-colors"

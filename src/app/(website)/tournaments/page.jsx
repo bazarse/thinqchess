@@ -540,27 +540,38 @@ const Tournaments = () => {
                   setPaymentStep(false);
                   setRegistrationData(null);
 
-                  // Clear form data
+                  // Clear ALL form data completely
                   setFormData({
                     particpantFirstName: "",
+                    particpantMiddleName: "",
                     particpantLastName: "",
                     mail_id: "",
                     phone_no: "",
                     dob: "",
                     gender: "",
+                    fidaID: "",
+                    tournament_type: "",
                     country: "",
+                    country_code: "",
                     state: "",
                     city: "",
-                    tournament_type: selectedTournamentType || "",
-                    discount_code: ""
+                    location: "",
                   });
 
-                  // Reset other states
+                  // Reset all other states
+                  setDiscountCode("");
                   setDiscountData(null);
                   setFinalAmount(tournamentFee);
                   setErrorMessage("");
                   setSuccesMessage("");
                   setIsAgeValid(true);
+                  setSelectedTournamentType("");
+                  setSelectedCountry(null);
+                  setSelectedState(null);
+                  setSelectedCity(null);
+
+                  // Scroll to top of form
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 className="bg-[#2B3AA0] hover:bg-[#1e2a70] text-white px-6 py-3 rounded-lg transition-colors"
               >

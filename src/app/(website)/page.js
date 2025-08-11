@@ -48,7 +48,7 @@ export default function Home() {
           </h2>
           <p className="text-[18px]">
             We believe chess is more than a game—it's a way to shape minds. Our
-            courses are designed for children aged 5+ years onwards, helping
+            courses are designed for children aged 5 years onwards, helping
             build focus, strategy, and confidence from the board to real life.
             Every class, every move, and every tournament is designed to sharpen
             their thinking while keeping the experience fun and engaging.
@@ -117,9 +117,9 @@ export default function Home() {
 
             <ul className="mt-8 flex flex-col gap-4">
               {[
-                "Transparent tracking of student progress",
-                "Personalised attention through game-based coaching",
                 "Structured curriculum with measurable outcomes",
+                "Personalized attention through game-based coaching",
+                "Transparent tracking of student progress",
                 "Tournaments to build confidence",
                 "Encouraging and inspiring mentors",
               ].map((item, index) => (
