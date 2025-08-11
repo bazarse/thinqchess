@@ -12,11 +12,31 @@ export async function POST(request) {
       );
     }
 
-    // Use Razorpay test mode for development
-    console.log('🎯 Creating Razorpay Order:', { amount, currency });
+    // Get payment settings from database
+    const { getDB } = require('../../../../lib/database.js');
+    const db = getDB();
+    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
 
-    // Demo mode for development (since we don't have real Razorpay keys)
-    if (process.env.DEVELOPMENT_MODE === 'true') {
+    let paymentSettings = {
+      payment_mode: 'demo',
+      demo_payment_enabled: true
+    };
+
+    if (settings && settings.payment_settings) {
+      try {
+        const parsed = typeof settings.payment_settings === 'string'
+          ? JSON.parse(settings.payment_settings)
+          : settings.payment_settings;
+        paymentSettings = { ...paymentSettings, ...parsed };
+      } catch (e) {
+        console.error('Error parsing payment settings:', e);
+      }
+    }
+
+    console.log('🎯 Creating Razorpay Order:', { amount, currency, mode: paymentSettings.payment_mode });
+
+    // Demo mode - either forced by settings or no Razorpay keys
+    if (paymentSettings.payment_mode === 'demo' || !paymentSettings.razorpay_key_id) {
       console.log('🎯 Demo Mode: Creating mock Razorpay order');
 
       const mockOrder = {
@@ -43,13 +63,13 @@ export async function POST(request) {
       });
     }
 
-    // Real Razorpay integration (for production)
+    // Real Razorpay integration
     try {
       const Razorpay = (await import('razorpay')).default;
 
       const razorpay = new Razorpay({
-        key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        key_secret: process.env.RAZORPAY_KEY_SECRET,
+        key_id: paymentSettings.razorpay_key_id,
+        key_secret: paymentSettings.razorpay_key_secret,
       });
 
       const options = {
@@ -67,7 +87,7 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         order: order,
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: paymentSettings.razorpay_key_id,
         message: 'Order created successfully'
       });
 

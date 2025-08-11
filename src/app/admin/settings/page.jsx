@@ -17,8 +17,18 @@ const AdminSettings = () => {
     confirmPassword: ''
   });
 
+  const [paymentSettings, setPaymentSettings] = useState({
+    payment_mode: 'demo', // 'demo' or 'razorpay'
+    razorpay_key_id: '',
+    razorpay_key_secret: '',
+    razorpay_webhook_secret: '',
+    demo_payment_enabled: true,
+    test_mode: true
+  });
+
   useEffect(() => {
     checkAuth();
+    fetchPaymentSettings();
   }, []);
 
   const checkAuth = async () => {
@@ -38,11 +48,31 @@ const AdminSettings = () => {
     }
   };
 
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/payment-settings');
+      if (response.ok) {
+        const data = await response.json();
+        setPaymentSettings(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment settings:', error);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePaymentChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setPaymentSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -103,6 +133,36 @@ const AdminSettings = () => {
     }
   };
 
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setSaving(true);
+
+    try {
+      const response = await fetch('/api/admin/payment-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentSettings),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('Payment settings updated successfully!');
+      } else {
+        setError(data.error || 'Failed to update payment settings');
+      }
+    } catch (error) {
+      console.error('Payment settings update failed:', error);
+      setError('Failed to update payment settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -119,9 +179,190 @@ const AdminSettings = () => {
         <p className="text-gray-600">Manage your admin account settings</p>
       </div>
 
-      {/* Settings Form */}
+      {/* Payment Integration Settings */}
+      <div className="bg-white rounded-xl shadow-md p-6 max-w-4xl">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">💳 Payment Integration Settings</h2>
+
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          {/* Payment Mode Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-4">Payment Mode</label>
+            <div className="space-y-3">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="payment_mode"
+                  value="demo"
+                  checked={paymentSettings.payment_mode === 'demo'}
+                  onChange={handlePaymentChange}
+                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 focus:ring-[#2B3AA0]"
+                />
+                <span className="ml-3 text-sm">
+                  <span className="font-medium text-green-600">🎯 Demo Payment</span>
+                  <span className="block text-gray-500">For testing - no real payments processed</span>
+                </span>
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="payment_mode"
+                  value="razorpay"
+                  checked={paymentSettings.payment_mode === 'razorpay'}
+                  onChange={handlePaymentChange}
+                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 focus:ring-[#2B3AA0]"
+                />
+                <span className="ml-3 text-sm">
+                  <span className="font-medium text-blue-600">💰 Razorpay Integration</span>
+                  <span className="block text-gray-500">Live payment processing with Razorpay</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Razorpay Settings - Only show when Razorpay is selected */}
+          {paymentSettings.payment_mode === 'razorpay' && (
+            <div className="bg-blue-50 p-6 rounded-lg space-y-4">
+              <h3 className="text-lg font-medium text-blue-900">Razorpay Configuration</h3>
+
+              {/* Test Mode Toggle */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="test_mode"
+                  name="test_mode"
+                  checked={paymentSettings.test_mode}
+                  onChange={handlePaymentChange}
+                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 rounded focus:ring-[#2B3AA0]"
+                />
+                <label htmlFor="test_mode" className="ml-3 text-sm">
+                  <span className="font-medium">Test Mode</span>
+                  <span className="block text-gray-600">Use Razorpay test keys (recommended for development)</span>
+                </label>
+              </div>
+
+              {/* Razorpay Key ID */}
+              <div>
+                <label htmlFor="razorpay_key_id" className="block text-sm font-medium text-gray-700 mb-2">
+                  Razorpay Key ID {paymentSettings.test_mode ? '(Test)' : '(Live)'}
+                </label>
+                <input
+                  type="text"
+                  id="razorpay_key_id"
+                  name="razorpay_key_id"
+                  value={paymentSettings.razorpay_key_id}
+                  onChange={handlePaymentChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                  placeholder={paymentSettings.test_mode ? "rzp_test_xxxxxxxxxx" : "rzp_live_xxxxxxxxxx"}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {paymentSettings.test_mode ? 'Get from Razorpay Dashboard → Settings → API Keys (Test Mode)' : 'Get from Razorpay Dashboard → Settings → API Keys (Live Mode)'}
+                </p>
+              </div>
+
+              {/* Razorpay Key Secret */}
+              <div>
+                <label htmlFor="razorpay_key_secret" className="block text-sm font-medium text-gray-700 mb-2">
+                  Razorpay Key Secret {paymentSettings.test_mode ? '(Test)' : '(Live)'}
+                </label>
+                <input
+                  type="password"
+                  id="razorpay_key_secret"
+                  name="razorpay_key_secret"
+                  value={paymentSettings.razorpay_key_secret}
+                  onChange={handlePaymentChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                  placeholder="Enter your Razorpay secret key"
+                />
+                <p className="text-xs text-gray-500 mt-1">Keep this secret and secure</p>
+              </div>
+
+              {/* Webhook Secret */}
+              <div>
+                <label htmlFor="razorpay_webhook_secret" className="block text-sm font-medium text-gray-700 mb-2">
+                  Webhook Secret (Optional)
+                </label>
+                <input
+                  type="password"
+                  id="razorpay_webhook_secret"
+                  name="razorpay_webhook_secret"
+                  value={paymentSettings.razorpay_webhook_secret}
+                  onChange={handlePaymentChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                  placeholder="Enter webhook secret for payment verification"
+                />
+                <p className="text-xs text-gray-500 mt-1">For enhanced security and payment verification</p>
+              </div>
+
+              {/* Instructions */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-medium text-yellow-800 mb-2">📋 Setup Instructions:</h4>
+                <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                  <li>Create a Razorpay account at <a href="https://razorpay.com" target="_blank" className="underline">razorpay.com</a></li>
+                  <li>Go to Dashboard → Settings → API Keys</li>
+                  <li>Generate {paymentSettings.test_mode ? 'Test' : 'Live'} API Keys</li>
+                  <li>Copy the Key ID and Key Secret here</li>
+                  <li>Configure webhooks for payment verification (optional)</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Demo Payment Settings */}
+          {paymentSettings.payment_mode === 'demo' && (
+            <div className="bg-green-50 p-6 rounded-lg">
+              <h3 className="text-lg font-medium text-green-900 mb-3">Demo Payment Configuration</h3>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="demo_payment_enabled"
+                  name="demo_payment_enabled"
+                  checked={paymentSettings.demo_payment_enabled}
+                  onChange={handlePaymentChange}
+                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 rounded focus:ring-[#2B3AA0]"
+                />
+                <label htmlFor="demo_payment_enabled" className="ml-3 text-sm">
+                  <span className="font-medium">Enable Demo Payments</span>
+                  <span className="block text-gray-600">Allow users to complete registrations without real payment</span>
+                </label>
+              </div>
+              <div className="mt-4 p-3 bg-green-100 rounded border border-green-200">
+                <p className="text-sm text-green-800">
+                  <strong>Demo Mode:</strong> All payments will be simulated. Users can complete registrations
+                  without entering real payment details. Perfect for testing and development.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          {message && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800">{message}</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-[#2B3AA0] text-white rounded-lg hover:bg-[#1e2a70] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save Payment Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Account Settings Form */}
       <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Account Settings</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">👤 Account Settings</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username */}
