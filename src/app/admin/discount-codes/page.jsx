@@ -84,18 +84,30 @@ const DiscountCodes = () => {
     }
 
     try {
+      const codeUpper = newCode.code.toUpperCase();
+
+      // Detect if this is a prefix code (ends with underscore)
+      const isPrefix = codeUpper.endsWith('_');
+
+      const requestBody = {
+        code: codeUpper,
+        discount_percent: parseFloat(newCode.discount_percent),
+        usage_limit: parseInt(newCode.usage_limit),
+        is_active: newCode.is_active,
+        code_type: isPrefix ? 'prefix' : 'manual'
+      };
+
+      // If it's a prefix code, add prefix field
+      if (isPrefix) {
+        requestBody.prefix = codeUpper;
+      }
+
       const response = await fetch('/api/admin/discount-codes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          code: newCode.code.toUpperCase(),
-          discount_percent: parseFloat(newCode.discount_percent),
-          usage_limit: parseInt(newCode.usage_limit),
-          is_active: newCode.is_active,
-          code_type: 'manual'
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -103,7 +115,7 @@ const DiscountCodes = () => {
       if (data.success) {
         setDiscountCodes(prev => [...prev, data.discountCode]);
         setNewCode({ code: '', discount_percent: '', usage_limit: '', is_active: true, code_type: 'manual' });
-        setMessage("Discount code added successfully!");
+        setMessage(`${isPrefix ? 'Prefix' : 'Discount'} code added successfully!`);
         setTimeout(() => setMessage(""), 3000);
       } else {
         setMessage(data.error || "Failed to add discount code");
@@ -315,8 +327,9 @@ const DiscountCodes = () => {
                 value={newCode.code}
                 onChange={(e) => setNewCode(prev => ({ ...prev, code: e.target.value }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="NEWCODE"
+                placeholder="NEWCODE or TC1_"
               />
+              <p className="text-xs text-gray-500 mt-1">Use underscore for prefix codes (e.g., TC1_)</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
@@ -349,6 +362,15 @@ const DiscountCodes = () => {
                 Add Code
               </button>
             </div>
+          </div>
+
+          <div className="mt-4 p-4 bg-green-50 rounded-lg">
+            <h3 className="font-medium text-green-900 mb-2">💡 Simple Prefix Codes:</h3>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li>• <strong>Regular Code:</strong> SAVE10 - Exact match required</li>
+              <li>• <strong>Prefix Code:</strong> TC1_ - Works for any code starting with TC1_</li>
+              <li>• <strong>Example:</strong> TC1_ with 10% discount allows TC1_STUDENT, TC1_TEACHER, etc.</li>
+            </ul>
           </div>
         </div>
 
