@@ -26,9 +26,17 @@ const AdminSettings = () => {
     test_mode: true
   });
 
+  const [googleSettings, setGoogleSettings] = useState({
+    places_api_key: '',
+    place_id_jp_nagar: 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+    place_id_akshayanagar: '',
+    reviews_enabled: true
+  });
+
   useEffect(() => {
     checkAuth();
     fetchPaymentSettings();
+    fetchGoogleSettings();
   }, []);
 
   const checkAuth = async () => {
@@ -60,6 +68,18 @@ const AdminSettings = () => {
     }
   };
 
+  const fetchGoogleSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/google-settings');
+      if (response.ok) {
+        const data = await response.json();
+        setGoogleSettings(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch Google settings:', error);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -71,6 +91,14 @@ const AdminSettings = () => {
   const handlePaymentChange = (e) => {
     const { name, value, type, checked } = e.target;
     setPaymentSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleGoogleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setGoogleSettings(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
@@ -163,6 +191,36 @@ const AdminSettings = () => {
     }
   };
 
+  const handleGoogleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setSaving(true);
+
+    try {
+      const response = await fetch('/api/admin/google-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(googleSettings),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('Google settings updated successfully!');
+      } else {
+        setError(data.error || 'Failed to update Google settings');
+      }
+    } catch (error) {
+      console.error('Google settings update failed:', error);
+      setError('Failed to update Google settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -177,6 +235,109 @@ const AdminSettings = () => {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Admin Settings</h1>
         <p className="text-gray-600">Manage your admin account settings</p>
+      </div>
+
+      {/* Google Integration Settings */}
+      <div className="bg-white rounded-xl shadow-md p-6 max-w-4xl">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">🌐 Google Integration Settings</h2>
+
+        <form onSubmit={handleGoogleSubmit} className="space-y-6">
+          {/* Google Reviews Settings */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-4">Google Reviews Configuration</label>
+
+            {/* Enable Reviews Toggle */}
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                id="reviews_enabled"
+                name="reviews_enabled"
+                checked={googleSettings.reviews_enabled}
+                onChange={handleGoogleChange}
+                className="w-4 h-4 text-[#2B3AA0] border-gray-300 rounded focus:ring-[#2B3AA0]"
+              />
+              <label htmlFor="reviews_enabled" className="ml-3 text-sm">
+                <span className="font-medium">Enable Google Reviews</span>
+                <span className="block text-gray-600">Show real Google reviews on homepage</span>
+              </label>
+            </div>
+
+            {/* Google Places API Key */}
+            <div className="mb-4">
+              <label htmlFor="places_api_key" className="block text-sm font-medium text-gray-700 mb-2">
+                Google Places API Key
+              </label>
+              <input
+                type="password"
+                id="places_api_key"
+                name="places_api_key"
+                value={googleSettings.places_api_key}
+                onChange={handleGoogleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                placeholder="Enter your Google Places API key"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Get from Google Cloud Console → APIs & Services → Credentials
+              </p>
+            </div>
+
+            {/* Place IDs */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="place_id_jp_nagar" className="block text-sm font-medium text-gray-700 mb-2">
+                  JP Nagar Place ID
+                </label>
+                <input
+                  type="text"
+                  id="place_id_jp_nagar"
+                  name="place_id_jp_nagar"
+                  value={googleSettings.place_id_jp_nagar}
+                  onChange={handleGoogleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                  placeholder="ChXdvpvpgI0jaOm_lM-Zf9XXYjM"
+                />
+              </div>
+              <div>
+                <label htmlFor="place_id_akshayanagar" className="block text-sm font-medium text-gray-700 mb-2">
+                  Akshayanagar Place ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  id="place_id_akshayanagar"
+                  name="place_id_akshayanagar"
+                  value={googleSettings.place_id_akshayanagar}
+                  onChange={handleGoogleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                  placeholder="Enter Akshayanagar place ID"
+                />
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <h4 className="font-medium text-blue-800 mb-2">📋 Setup Instructions:</h4>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Go to <a href="https://console.cloud.google.com" target="_blank" className="underline">Google Cloud Console</a></li>
+                <li>Create a new project or select existing one</li>
+                <li>Enable "Places API" in APIs & Services</li>
+                <li>Create credentials → API Key</li>
+                <li>Restrict the API key to Places API for security</li>
+                <li>Find your business Place ID using <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" className="underline">Place ID Finder</a></li>
+              </ol>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-[#2B3AA0] text-white rounded-lg hover:bg-[#1e2a70] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save Google Settings'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Payment Integration Settings */}

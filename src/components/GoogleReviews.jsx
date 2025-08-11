@@ -1,73 +1,47 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
-const GoogleReviews = ({ location = "JP Nagar" }) => {
+const GoogleReviews = ({ location = "JP Nagar", placeId = "ChXdvpvpgI0jaOm_lM-Zf9XXYjM" }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Mock reviews data (in production, this would come from Google Places API)
-  const mockReviews = {
-    "JP Nagar": [
-      {
-        id: 1,
-        author_name: "Priya Sharma",
-        rating: 5,
-        text: "Excellent chess coaching! My son has improved tremendously under Krishna sir's guidance. Highly recommended for serious chess learning.",
-        time: "2 weeks ago",
-        profile_photo_url: "/images/reviews/user1.jpg"
-      },
-      {
-        id: 2,
-        author_name: "Rajesh Kumar",
-        rating: 5,
-        text: "Best chess academy in Bangalore! Professional coaching with personalized attention. My daughter loves the classes.",
-        time: "1 month ago",
-        profile_photo_url: "/images/reviews/user2.jpg"
-      },
-      {
-        id: 3,
-        author_name: "Anita Reddy",
-        rating: 5,
-        text: "Amazing experience! The coaches are very knowledgeable and patient. Great environment for learning chess.",
-        time: "3 weeks ago",
-        profile_photo_url: "/images/reviews/user3.jpg"
-      }
-    ],
-    "Akshayanagar": [
-      {
-        id: 4,
-        author_name: "Suresh Babu",
-        rating: 5,
-        text: "Outstanding chess coaching center! My son has won several tournaments after joining ThinQ Chess. Thank you!",
-        time: "1 week ago",
-        profile_photo_url: "/images/reviews/user4.jpg"
-      },
-      {
-        id: 5,
-        author_name: "Meera Nair",
-        rating: 5,
-        text: "Highly professional and dedicated coaches. The systematic approach to teaching chess is commendable.",
-        time: "2 months ago",
-        profile_photo_url: "/images/reviews/user5.jpg"
-      },
-      {
-        id: 6,
-        author_name: "Vikram Singh",
-        rating: 4,
-        text: "Good chess academy with experienced coaches. Regular tournaments help students gain practical experience.",
-        time: "1 month ago",
-        profile_photo_url: "/images/reviews/user6.jpg"
-      }
-    ]
-  };
+  const [rating, setRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [source, setSource] = useState('loading');
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setReviews(mockReviews[location] || []);
+    fetchGoogleReviews();
+  }, [location, placeId]);
+
+  const fetchGoogleReviews = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching reviews for:', location);
+
+      const response = await fetch(`/api/google-reviews?placeId=${placeId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setReviews(data.reviews || []);
+        setRating(data.rating || 0);
+        setTotalReviews(data.total_reviews || 0);
+        setSource(data.source || 'unknown');
+
+        console.log('✅ Reviews loaded:', {
+          source: data.source,
+          count: data.reviews?.length || 0,
+          rating: data.rating
+        });
+      } else {
+        console.error('❌ Failed to fetch reviews:', data.error);
+        // Keep empty state or show error
+      }
+    } catch (error) {
+      console.error('❌ Error fetching reviews:', error);
+      // Keep empty state or show error
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, [location]);
+    }
+  };
 
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
@@ -110,17 +84,35 @@ const GoogleReviews = ({ location = "JP Nagar" }) => {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-[#2B3AA0]">
-          Reviews
-        </h3>
+        <div>
+          <h3 className="text-xl font-bold text-[#2B3AA0]">
+            Google Reviews
+          </h3>
+          {source && (
+            <div className="flex items-center mt-1">
+              {source === 'google' && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  ✅ Live from Google
+                </span>
+              )}
+              {source.includes('mock') && (
+                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                  🎯 Demo Data
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex items-center">
           <span className="text-2xl font-bold text-[#2B3AA0] mr-2">
-            {(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)}
+            {rating > 0 ? rating.toFixed(1) : (reviews.length > 0 ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1) : '0.0')}
           </span>
           <div className="flex">
-            {renderStars(Math.round(reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length))}
+            {renderStars(Math.round(rating > 0 ? rating : (reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0)))}
           </div>
-          <span className="text-gray-600 ml-2">({reviews.length} reviews)</span>
+          <span className="text-gray-600 ml-2">
+            ({totalReviews > 0 ? totalReviews : reviews.length} reviews)
+          </span>
         </div>
       </div>
 
