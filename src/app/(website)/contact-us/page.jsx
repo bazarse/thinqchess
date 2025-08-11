@@ -106,13 +106,50 @@ const ContactUs = () => {
         </div>
 
         {/* Address */}
-        <div className="bg-[#f7f7f7] rounded-lg">
+        <div className="px-10 py-10 bg-[#f7f7f7] rounded-lg">
+          <div className="px-8 py-8 pb-6 bg-[#FFB31A] w-fit rounded-lg">
+            <i className="material-symbols-outlined text-white md:!text-[48px] !text-[32px]">
+              location_on
+            </i>
+          </div>
+          <div className="mt-8 flex flex-col gap-2">
+            <h4 className="md:text-3xl text-2xl font-bold text-[#2B3AA0]">
+              ThinQ Chess Academy
+            </h4>
+            <p className="text-gray-700 text-lg">
+              JP Nagar 8th Phase<br />
+              Bangalore, Karnataka
+            </p>
+            <a
+              href="https://www.google.com/maps/place/ThinQ+Chess+-+JP+Nagar+8th+Phase/@12.8705781,77.5771435,17z/data=!4m14!1m7!3m6!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!2sThinQ+Chess+-+JP+Nagar+8th+Phase!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc!3m5!1s0x3bae6bfb70c1f8fb:0x930e1b9af0b9debd!8m2!3d12.8705781!4d77.5797184!16s%2Fg%2F11xmc_0zjc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#2B3AA0] hover:text-[#1e2a70] underline text-sm mt-2"
+            >
+              📍 View on Google Maps
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Map Section */}
+      <section className="w-11/12 mx-auto my-20">
+        <div className="text-center mb-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#2B3AA0] mb-4">
+            Visit Our Academy
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Find us at ThinQ Chess Academy in JP Nagar 8th Phase, Bangalore. We're easily accessible and look forward to welcoming you!
+          </p>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.573648578676!2d77.57720547358713!3d12.870791217083454!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae6ab40337aa89%3A0xb961c4e87c2873cb!2sAnu%20Provisions%2C%20J%20P%20Nagar!5e0!3m2!1sen!2sin!4v1749371718290!5m2!1sen!2sin"
-            className="w-full h-full rounded-lg"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3889.5736485786764!2d77.57714357358713!3d12.870578117083454!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae6bfb70c1f8fb%3A0x930e1b9af0b9debd!2sThinQ%20Chess%20-%20JP%20Nagar%208th%20Phase!5e0!3m2!1sen!2sin!4v1734567890123!5m2!1sen!2sin"
+            className="w-full h-96 md:h-[500px]"
             style={{ border: 0 }}
             allowFullScreen=""
             loading="lazy"
+            title="ThinQ Chess Academy - JP Nagar 8th Phase Location"
           ></iframe>
         </div>
       </section>
