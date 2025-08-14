@@ -840,7 +840,7 @@ const MultiStepFormTwo = () => {
                   onChange={(value, countryData, e, formattedValue) =>
                     setFormData((prev) => ({
                       ...prev,
-                      studentPhone: formattedValue,
+                      studentPhone: value, // Use raw value without hyphens
                     }))
                   }
                 />
@@ -915,7 +915,7 @@ const MultiStepFormTwo = () => {
                 onChange={(value, countryData, e, formattedValue) =>
                   setFormData((prev) => ({
                     ...prev,
-                    fatherPhone: formattedValue,
+                    fatherPhone: value, // Use raw value without hyphens
                   }))
                 }
               />
@@ -970,7 +970,7 @@ const MultiStepFormTwo = () => {
                 onChange={(value, countryData, e, formattedValue) =>
                   setFormData((prev) => ({
                     ...prev,
-                    motherPhone: formattedValue,
+                    motherPhone: value, // Use raw value without hyphens
                   }))
                 }
               />

@@ -4,6 +4,8 @@ import { useRouter, usePathname } from "next/navigation";
 
 export default function AdminLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -19,11 +21,45 @@ export default function AdminLayout({ children }) {
     { href: "/admin/settings", label: "Settings", icon: "⚙️" },
   ];
 
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/admin/verify');
+      if (response.ok) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        if (pathname !== '/admin') {
+          router.push('/admin');
+        }
+      }
+    } catch (error) {
+      console.log('Authentication check failed');
+      setIsAuthenticated(false);
+      if (pathname !== '/admin') {
+        router.push('/admin');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
-  const handleLogout = () => {
+
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear server-side cookie
+      await fetch('/api/admin/login', { method: 'DELETE' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     // Clear any stored auth tokens
     document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    setIsAuthenticated(false);
     router.push('/admin');
   };
 
@@ -34,6 +70,24 @@ export default function AdminLayout({ children }) {
 
   if (pathname === '/admin') {
     return children;
+  }
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3AA0] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    router.push('/admin');
+    return null;
   }
 
   return (

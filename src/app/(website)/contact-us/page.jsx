@@ -12,6 +12,7 @@ const ContactUs = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeLocation, setActiveLocation] = useState('jpnagar');
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const sendEmail = (values) => {
     setIsSubmitting(true);
@@ -20,7 +21,7 @@ const ContactUs = () => {
       parent_name: values.parentName,
       child_name: values.childName,
       age: values.Age,
-      contact_number: `+${values.phone}`,
+      contact_number: phoneNumber,
       email: values.email,
       state: values.state,
       country: values.country,
@@ -307,9 +308,11 @@ const ContactUs = () => {
                       name: "phone",
                       required: true,
                     }}
-                    onChange={(value, country, e, formattedValue) =>
-                      console.log(value, formattedValue)
-                    }
+                    value={phoneNumber}
+                    onChange={(value, country, e, formattedValue) => {
+                      setPhoneNumber(value); // Store raw value without hyphens
+                      console.log(value, formattedValue);
+                    }}
                   />
                 </Form.Item>
               </div>

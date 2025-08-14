@@ -13,6 +13,7 @@ const BookADemo = () => {
   const [succesMessage, setSuccesMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const sendEmail = async (values) => {
     setIsSubmitting(true);
@@ -22,7 +23,7 @@ const BookADemo = () => {
       const demoRequestData = {
         parent_name: values.parentName,
         email: values.email,
-        phone: values.phone,
+        phone: phoneNumber, // Use state value instead of form value
         child_name: values.childName,
         age: values.Age,
         past_training: values.programLevel,
@@ -49,7 +50,7 @@ const BookADemo = () => {
       const templateParams = {
         parent_name: values.parentName,
         email: values.email,
-        contact_number: `+${values.phone}`,
+        contact_number: phoneNumber, // Use state value without formatting
         child_name: values.childName,
         age: values.Age,
         any_past_training: values.programLevel,
@@ -177,9 +178,11 @@ const BookADemo = () => {
                         name: "phone",
                         required: true,
                       }}
-                      onChange={(value, country, e, formattedValue) =>
-                        console.log(value, formattedValue)
-                      }
+                      value={phoneNumber}
+                      onChange={(value, country, e, formattedValue) => {
+                        setPhoneNumber(value); // Store raw value without hyphens
+                        console.log(value, formattedValue);
+                      }}
                     />
                   </Form.Item>
                 </Col>

@@ -1,0 +1,29 @@
+# ThinQ Chess Production Environment Variables
+
+# Database Configuration
+DATABASE_TYPE="sqlite"
+DATABASE_PATH="/var/www/html/thinqchess/database.sqlite"
+
+# Admin Settings
+JWT_SECRET="your-super-secure-jwt-secret-key-2024"
+ADMIN_EMAIL="admin@thinqchess.com"
+ADMIN_PASSWORD="your-secure-admin-password"
+
+# EmailJS Configuration
+NEXT_PUBLIC_EMAILJS_SERVICE_ID="your-emailjs-service-id"
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID="your-emailjs-template-id"
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY="your-emailjs-public-key"
+
+# Razorpay Configuration (Production Keys)
+NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_live_your_key_id"
+RAZORPAY_KEY_SECRET="your_razorpay_secret"
+
+# reCAPTCHA Configuration
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY="your-recaptcha-site-key"
+
+# Production Settings
+NODE_ENV="production"
+PORT=3000
+
+# Domain Configuration
+NEXT_PUBLIC_DOMAIN="https://yourdomain.com"
