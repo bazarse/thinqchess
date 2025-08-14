@@ -235,8 +235,8 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Validate required fields
     const requiredFields = ['participant_first_name', 'participant_last_name', 'email'];
@@ -250,15 +250,13 @@ export async function POST(request) {
     }
 
     // Insert registration
-    const insertStmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO tournament_registrations (
         participant_first_name, participant_last_name, email, phone, dob, gender,
         tournament_type, country, state, city, address, amount_paid, discount_code,
         discount_amount, payment_id, razorpay_order_id, payment_status, type
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+    `, [
       body.participant_first_name,
       body.participant_last_name,
       body.email,
@@ -277,10 +275,10 @@ export async function POST(request) {
       body.razorpay_order_id || null,
       body.payment_status || 'pending',
       body.type || 'tournament'
-    );
+    ]);
 
     // Get the created registration
-    const newRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(result.lastInsertRowid);
+    const newRegistration = await db.get('SELECT * FROM tournament_registrations WHERE id = ?', [result.lastInsertRowid]);
 
     return NextResponse.json({
       success: true,
@@ -313,11 +311,11 @@ export async function PUT(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if registration exists
-    const existing = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM tournament_registrations WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Registration not found' },
@@ -354,10 +352,10 @@ export async function PUT(request) {
 
     // Execute update
     const updateQuery = `UPDATE tournament_registrations SET ${updateFields.join(', ')} WHERE id = ?`;
-    db.prepare(updateQuery).run(...updateValues);
+    await db.run(updateQuery, updateValues);
 
     // Get updated registration
-    const updatedRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(id);
+    const updatedRegistration = await db.get('SELECT * FROM tournament_registrations WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
@@ -390,11 +388,11 @@ export async function DELETE(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if registration exists
-    const existing = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM tournament_registrations WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Registration not found' },
@@ -403,7 +401,7 @@ export async function DELETE(request) {
     }
 
     // Delete registration
-    db.prepare('DELETE FROM tournament_registrations WHERE id = ?').run(id);
+    await db.run('DELETE FROM tournament_registrations WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,

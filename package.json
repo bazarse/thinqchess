@@ -6,14 +6,18 @@
     "dev": "next dev --turbo",
     "dev:fast": "next dev --turbo --experimental-https",
     "build": "next build",
-    "start": "next start",
+    "start": "node server-init.js && next start",
+    "start:server": "NODE_ENV=production node server-init.js && next start",
+    "start:dev": "next start",
     "lint": "next lint",
     "analyze": "cross-env ANALYZE=true next build",
     "clean": "node clear-cache.js",
     "fresh": "npm run clean && npm run dev",
     "build:analyze": "cross-env ANALYZE=true next build",
     "setup-db": "node init-database.js",
-    "db:init": "node init-database.js"
+    "db:init": "node init-database.js",
+    "server:init": "node server-init.js",
+    "deploy": "npm run build && npm run start:server"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",

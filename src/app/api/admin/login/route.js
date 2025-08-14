@@ -26,104 +26,87 @@ export async function POST(request) {
       );
     }
 
-    // Development mode - use hardcoded credentials
-    if (process.env.DEVELOPMENT_MODE === 'true') {
-      console.log('Development mode login');
+    // Universal login - works for both development and production
+    console.log('Processing login request...');
+    console.log('Environment check:', {
+      DEVELOPMENT_MODE: process.env.DEVELOPMENT_MODE,
+      NODE_ENV: process.env.NODE_ENV,
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL ? 'set' : 'not set',
+      ADMIN_PASSWORD: process.env.ADMIN_PASSWORD ? 'set' : 'not set'
+    });
+
+    // Define valid credentials (multiple options for flexibility)
+    const validCredentials = [
+      // Environment-based credentials (production)
+      {
+        email: process.env.ADMIN_EMAIL || 'admin@thinqchess.com',
+        password: process.env.ADMIN_PASSWORD || '1234'
+      },
+      // Fallback credentials (development/testing)
+      { email: 'admin@thinqchess.com', password: '1234' },
+      { email: 'admin', password: '1234' },
+      { email: 'admin@thinqchess.com', password: 'admin123' }
+    ];
+
+    console.log('Checking credentials against valid options...');
+    
+    // Check if provided credentials match any valid option
+    const isValidCredential = validCredentials.some(cred =>
+      cred.email === email && cred.password === password
+    );
+
+    if (isValidCredential) {
+      console.log('✅ Valid credentials found, creating token');
       
-      if ((email === 'admin@thinqchess.com' && password === 'admin123') || 
-          (email === 'admin' && password === '1234')) {
-        
-        console.log('Valid credentials, creating token');
-        
-        const token = jwt.sign(
-          { 
-            email: 'admin@thinqchess.com',
-            role: 'admin',
-            id: 1
-          },
-          process.env.JWT_SECRET || 'thinqchess-secret-key-2024',
-          { expiresIn: '24h' }
-        );
+      const token = jwt.sign(
+        {
+          email: email.includes('@') ? email : 'admin@thinqchess.com',
+          role: 'admin',
+          id: 1
+        },
+        process.env.JWT_SECRET || 'thinqchess-secret-key-2024',
+        { expiresIn: '24h' }
+      );
 
-        const response = NextResponse.json({
-          success: true,
-          message: 'Login successful',
-          user: {
-            email: 'admin@thinqchess.com',
-            role: 'admin'
-          }
-        });
+      const response = NextResponse.json({
+        success: true,
+        message: 'Login successful',
+        user: {
+          email: email.includes('@') ? email : 'admin@thinqchess.com',
+          role: 'admin'
+        }
+      });
 
-        // Set HTTP-only cookie
-        response.cookies.set('admin-token', token, {
-          httpOnly: true,
-          secure: false, // Disable secure in development
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60 * 1000, // 24 hours
-          path: '/'
-        });
+      // Determine if we're in production (secure cookies)
+      const isProduction = process.env.NODE_ENV === 'production';
+      
+      // Set HTTP-only cookie with appropriate security settings
+      response.cookies.set('admin-token', token, {
+        httpOnly: true,
+        secure: isProduction, // Use secure cookies in production
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/'
+      });
 
-        console.log('Login successful, token set');
-        console.log('Cookie settings:', {
-          httpOnly: true,
-          secure: false,
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60 * 1000,
-          path: '/'
-        });
-        return response;
-      } else {
-        console.log('Invalid credentials');
-        return NextResponse.json(
-          { error: 'Invalid credentials' },
-          { status: 401 }
-        );
-      }
+      console.log('✅ Login successful, token set with settings:', {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/'
+      });
+      
+      return response;
     } else {
-      // Production mode - use environment variables
-      console.log('Production mode login with environment variables');
-
-      // Use environment variables for admin credentials
-      const adminEmail = process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || 'admin';
-      const adminPassword = process.env.ADMIN_PASSWORD || '1234';
-
-      if (email === adminEmail && password === adminPassword) {
-        console.log('Valid admin credentials from environment');
-
-        const token = jwt.sign(
-          {
-            email: adminEmail,
-            role: 'admin',
-            id: 1
-          },
-          process.env.JWT_SECRET || 'thinqchess-secret-key-2024',
-          { expiresIn: '24h' }
-        );
-
-        const response = NextResponse.json({
-          success: true,
-          message: 'Login successful',
-          user: {
-            email: adminEmail,
-            role: 'admin'
-          }
-        });
-
-        response.cookies.set('admin-token', token, {
-          httpOnly: true,
-          secure: false, // Disable secure in development
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60 * 1000,
-          path: '/'
-        });
-
-        return response;
-      } else {
-        return NextResponse.json(
-          { error: 'Invalid credentials' },
-          { status: 401 }
-        );
-      }
+      console.log('❌ Invalid credentials provided');
+      console.log('Provided:', { email, password });
+      console.log('Expected one of:', validCredentials.map(c => ({ email: c.email, password: '***' })));
+      
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      );
     }
 
   } catch (error) {
@@ -142,18 +125,22 @@ export async function DELETE(request) {
       message: 'Logged out successfully'
     });
 
-    // Clear the admin token cookie
+    // Determine if we're in production
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Clear the admin token cookie with matching security settings
     response.cookies.set('admin-token', '', {
       httpOnly: true,
-      secure: false, // Disable secure in development
-      sameSite: 'lax',
+      secure: isProduction, // Match login cookie settings
+      sameSite: isProduction ? 'strict' : 'lax',
       maxAge: 0,
       path: '/'
     });
 
+    console.log('✅ Logout successful, cookie cleared');
     return response;
   } catch (error) {
-    console.error('Error during logout:', error);
+    console.error('❌ Error during logout:', error);
     return NextResponse.json(
       { error: 'Logout failed' },
       { status: 500 }

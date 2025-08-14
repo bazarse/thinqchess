@@ -43,9 +43,23 @@ const TournamentManagement = () => {
     // return () => clearInterval(interval);
   }, []);
 
+  const updateTournamentStatus = async () => {
+    try {
+      await fetch('/api/admin/update-tournament-status', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error updating tournament status:', error);
+    }
+  };
+
   const fetchTournaments = async () => {
     try {
       setLoading(true);
+
+      // First update tournament status to move expired tournaments to past
+      await updateTournamentStatus();
+
       const response = await fetch('/api/admin/tournaments');
       if (response.ok) {
         const data = await response.json();
@@ -368,38 +382,7 @@ const TournamentManagement = () => {
     }
   };
 
-  const markTournamentAsEnded = async (tournamentId) => {
-    if (window.confirm('⚠️ DEMO PURPOSE ONLY: This manual completion is for testing past tournaments.\n\nIn production, tournaments automatically move to past section when their date ends.\n\nDo you want to mark this tournament as completed for demo purposes?')) {
-      try {
-        const response = await fetch(`/api/admin/tournaments/${tournamentId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            status: 'completed',
-            is_active: 0
-          }),
-        });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setMessage('Tournament marked as ended successfully');
-            fetchTournaments();
-          } else {
-            setMessage(data.error || 'Error updating tournament status');
-          }
-        } else {
-          const errorData = await response.json();
-          setMessage(errorData.error || 'Error updating tournament status');
-        }
-      } catch (error) {
-        console.error('Error updating tournament:', error);
-        setMessage('Error updating tournament status');
-      }
-    }
-  };
 
   const deleteTournament = async (id) => {
     if (confirm('Are you sure you want to delete this tournament? This will also delete all related registrations.')) {
@@ -838,14 +821,7 @@ const TournamentManagement = () => {
                       >
                         View Registrations
                       </button>
-                      {tournament.status !== 'completed' && (
-                        <button
-                          onClick={() => markTournamentAsEnded(tournament.id)}
-                          className="text-orange-600 hover:text-orange-900 mr-2"
-                        >
-                          Mark as Ended
-                        </button>
-                      )}
+
                       <button
                         onClick={() => deleteTournament(tournament.id)}
                         className="text-red-600 hover:text-red-900"
