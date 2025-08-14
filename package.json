@@ -1,4 +1,19 @@
 {
+  "name": "thinqchess",
+  "version": "0.1.0",
+  "type": "module",   <-- yeh add karna hai
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "node server-init.js && next start"
+  },
+  "dependencies": {
+    ...
+  }
+}
+
+
+{
   "name": "chess-academy",
   "version": "0.1.0",
   "private": true,
