@@ -852,7 +852,7 @@ const Tournaments = () => {
                     onChange={(value, countryData, e, formattedValue) =>
                       setFormData((prev) => ({
                         ...prev,
-                        phone_no: formattedValue,
+                        phone_no: value, // Use raw value instead of formattedValue
                       }))
                     }
                   />
