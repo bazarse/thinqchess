@@ -1,14 +1,13 @@
 {
   "name": "thinqchess",
   "version": "0.1.0",
-  "type": "module",   <-- yeh add karna hai
+  "type": "module",   
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "node server-init.js && next start"
   },
   "dependencies": {
-    ...
   }
 }
 
