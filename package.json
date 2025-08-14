@@ -1,24 +1,4 @@
 {
-  "name": "thinqchess",
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "node server-init.js && next start"
-  },
-  "dependencies": {
-    "@babel/core": "^7.22.9",
-    "@babel/preset-env": "^7.22.9",
-    "dotenv": "^17.2.1",
-    "next": "15.3.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  }
-}
-
-
-{
   "name": "chess-academy",
   "version": "0.1.0",
   "private": true,
