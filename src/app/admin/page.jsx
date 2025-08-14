@@ -19,13 +19,21 @@ const AdminLogin = () => {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/admin/verify');
+      console.log('Checking auth status...');
+      console.log('Document cookies:', document.cookie);
+      const response = await fetch('/api/admin/verify', {
+        credentials: 'include'
+      });
+      console.log('Verify response status:', response.status);
       if (response.ok) {
+        console.log('Already authenticated, redirecting to dashboard');
         setIsLoggedIn(true);
         router.push('/admin/dashboard');
+      } else {
+        console.log('Not authenticated, staying on login page');
       }
     } catch (error) {
-      console.log('Not authenticated');
+      console.log('Authentication check failed:', error);
     }
   };
 
@@ -49,14 +57,21 @@ const AdminLogin = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(credentials)
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        console.log('Login successful, response:', data);
+        console.log('Document cookies after login:', document.cookie);
         setIsLoggedIn(true);
-        router.push('/admin/dashboard');
+
+        // Wait a bit before redirecting to ensure cookie is set
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 100);
       } else {
         setError(data.error || 'Login failed');
       }

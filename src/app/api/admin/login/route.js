@@ -57,12 +57,20 @@ export async function POST(request) {
         // Set HTTP-only cookie
         response.cookies.set('admin-token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 24 * 60 * 60 * 1000 // 24 hours
+          secure: false, // Disable secure in development
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+          path: '/'
         });
 
         console.log('Login successful, token set');
+        console.log('Cookie settings:', {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000,
+          path: '/'
+        });
         return response;
       } else {
         console.log('Invalid credentials');
@@ -103,9 +111,10 @@ export async function POST(request) {
 
         response.cookies.set('admin-token', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 24 * 60 * 60 * 1000
+          secure: false, // Disable secure in development
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000,
+          path: '/'
         });
 
         return response;
@@ -136,9 +145,10 @@ export async function DELETE(request) {
     // Clear the admin token cookie
     response.cookies.set('admin-token', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0
+      secure: false, // Disable secure in development
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
     });
 
     return response;

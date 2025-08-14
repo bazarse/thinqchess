@@ -4,8 +4,11 @@ import jwt from 'jsonwebtoken';
 export async function GET(request) {
   try {
     const token = request.cookies.get('admin-token')?.value;
+    console.log('Verify request - token:', token ? 'present' : 'missing');
+    console.log('All cookies:', request.cookies.getAll());
 
     if (!token) {
+      console.log('No token found, returning 401');
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }

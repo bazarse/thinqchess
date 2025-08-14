@@ -28,7 +28,9 @@ export default function AdminLayout({ children }) {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/admin/verify');
+      const response = await fetch('/api/admin/verify', {
+        credentials: 'include'
+      });
       if (response.ok) {
         setIsAuthenticated(true);
       } else {
@@ -53,7 +55,10 @@ export default function AdminLayout({ children }) {
   const handleLogout = async () => {
     try {
       // Call logout API to clear server-side cookie
-      await fetch('/api/admin/login', { method: 'DELETE' });
+      await fetch('/api/admin/login', {
+        method: 'DELETE',
+        credentials: 'include'
+      });
     } catch (error) {
       console.error('Logout error:', error);
     }
