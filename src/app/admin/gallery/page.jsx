@@ -388,51 +388,94 @@ const GalleryManagement = () => {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
-            {filteredItems.map((image) => (
-              <div key={image.id} className="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="bg-gray-50 rounded-xl overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <div className="aspect-video bg-gray-200 flex items-center justify-center">
-                    <img
-                      src={image.url}
-                      alt={image.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/images/placeholder.jpg';
-                      }}
-                    />
+                    {item.type === 'video' ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={item.image_url || `https://img.youtube.com/vi/${item.youtube_id}/maxresdefault.jpg`}
+                          alt={item.image_name || item.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = '/images/placeholder.jpg';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-red-600 text-white rounded-full p-3">
+                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={item.image_url || item.url}
+                        alt={item.image_name || item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/images/placeholder.jpg';
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="absolute top-2 left-2">
                     <input
                       type="checkbox"
-                      checked={selectedItems.includes(image.id)}
-                      onChange={() => toggleItemSelection(image.id)}
+                      checked={selectedItems.includes(item.id)}
+                      onChange={() => toggleItemSelection(item.id)}
                       className="w-4 h-4 text-[#2B3AA0] bg-white border-gray-300 rounded focus:ring-[#2B3AA0]"
                     />
                   </div>
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {item.type === 'video' && (
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                        Video
+                      </span>
+                    )}
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      image.category === 'tournaments' ? 'bg-yellow-100 text-yellow-800' :
-                      image.category === 'classes' ? 'bg-blue-100 text-blue-800' :
-                      image.category === 'events' ? 'bg-green-100 text-green-800' :
-                      image.category === 'academy' ? 'bg-purple-100 text-purple-800' :
-                      image.category === 'equipment' ? 'bg-indigo-100 text-indigo-800' :
+                      item.category === 'tournaments' ? 'bg-yellow-100 text-yellow-800' :
+                      item.category === 'classes' ? 'bg-blue-100 text-blue-800' :
+                      item.category === 'events' ? 'bg-green-100 text-green-800' :
+                      item.category === 'academy' ? 'bg-purple-100 text-purple-800' :
+                      item.category === 'equipment' ? 'bg-indigo-100 text-indigo-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {image.category}
+                      {item.category}
                     </span>
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2 truncate">{image.name}</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2 truncate">
+                    {item.image_name || item.title || item.name}
+                  </h3>
                   <div className="text-xs text-gray-500 mb-3 space-y-1">
-                    <p>Size: {image.size}</p>
-                    <p>Uploaded: {image.uploaded_at}</p>
-                    <p>Dimensions: {image.dimensions}</p>
+                    {item.type === 'video' ? (
+                      <>
+                        <p>Type: YouTube Video</p>
+                        <p>Added: {new Date(item.uploaded_at || item.created_at).toLocaleDateString()}</p>
+                        {item.youtube_url && (
+                          <p className="truncate">
+                            <a href={item.youtube_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              View on YouTube
+                            </a>
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>Size: {item.size || 'N/A'}</p>
+                        <p>Uploaded: {new Date(item.uploaded_at || item.created_at).toLocaleDateString()}</p>
+                        <p>Dimensions: {item.dimensions || 'N/A'}</p>
+                      </>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <select
-                      value={image.category}
-                      onChange={(e) => updateImageCategory(image.id, e.target.value)}
+                      value={item.category}
+                      onChange={(e) => updateItemCategory(item.id, e.target.value)}
                       className="flex-1 text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#2B3AA0]"
                     >
                       <option value="tournaments">Tournaments</option>
@@ -441,9 +484,10 @@ const GalleryManagement = () => {
                       <option value="academy">Academy</option>
                       <option value="equipment">Equipment</option>
                       <option value="uncategorized">Uncategorized</option>
+                      {item.type === 'video' && <option value="shorts">YouTube Shorts</option>}
                     </select>
                     <button
-                      onClick={() => handleDeleteImage(image.id)}
+                      onClick={() => handleDeleteItem(item.id, item.type)}
                       className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded text-xs font-medium transition-colors"
                     >
                       Delete
@@ -455,37 +499,69 @@ const GalleryManagement = () => {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {filteredItems.map((image) => (
-              <div key={image.id} className="p-6 hover:bg-gray-50 transition-colors">
+            {filteredItems.map((item) => (
+              <div key={item.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center gap-4">
                   <input
                     type="checkbox"
-                    checked={selectedItems.includes(image.id)}
-                    onChange={() => toggleItemSelection(image.id)}
+                    checked={selectedItems.includes(item.id)}
+                    onChange={() => toggleItemSelection(item.id)}
                     className="w-4 h-4 text-[#2B3AA0] bg-white border-gray-300 rounded focus:ring-[#2B3AA0]"
                   />
-                  <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                    <img
-                      src={image.url}
-                      alt={image.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.src = '/images/placeholder.jpg';
-                      }}
-                    />
+                  <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
+                    {item.type === 'video' ? (
+                      <>
+                        <img
+                          src={item.image_url || `https://img.youtube.com/vi/${item.youtube_id}/maxresdefault.jpg`}
+                          alt={item.image_name || item.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src = '/images/placeholder.jpg';
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-red-600 text-white rounded-full p-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <img
+                        src={item.image_url || item.url}
+                        alt={item.image_name || item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = '/images/placeholder.jpg';
+                        }}
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">{image.name}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {item.image_name || item.title || item.name}
+                    </h3>
                     <div className="text-sm text-gray-500 mt-1">
-                      <span className="mr-4">Size: {image.size}</span>
-                      <span className="mr-4">Uploaded: {image.uploaded_at}</span>
-                      <span>Dimensions: {image.dimensions}</span>
+                      {item.type === 'video' ? (
+                        <>
+                          <span className="mr-4">Type: Video</span>
+                          <span className="mr-4">Added: {new Date(item.uploaded_at || item.created_at).toLocaleDateString()}</span>
+                          <span>Category: {item.category}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-4">Size: {item.size || 'N/A'}</span>
+                          <span className="mr-4">Uploaded: {new Date(item.uploaded_at || item.created_at).toLocaleDateString()}</span>
+                          <span>Dimensions: {item.dimensions || 'N/A'}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <select
-                      value={image.category}
-                      onChange={(e) => updateImageCategory(image.id, e.target.value)}
+                      value={item.category}
+                      onChange={(e) => updateItemCategory(item.id, e.target.value)}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
                     >
                       <option value="tournaments">Tournaments</option>
@@ -494,9 +570,10 @@ const GalleryManagement = () => {
                       <option value="academy">Academy</option>
                       <option value="equipment">Equipment</option>
                       <option value="uncategorized">Uncategorized</option>
+                      {item.type === 'video' && <option value="shorts">YouTube Shorts</option>}
                     </select>
                     <button
-                      onClick={() => handleDeleteImage(image.id)}
+                      onClick={() => handleDeleteItem(item.id, item.type)}
                       className="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-sm font-medium transition-colors"
                     >
                       Delete
@@ -570,7 +647,7 @@ const GalleryManagement = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleVideoUpload}
+                  onClick={handleVideoAdd}
                   disabled={uploading || !videoData.title || !videoData.youtube_url}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

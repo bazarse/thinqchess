@@ -15,8 +15,21 @@ const PastTournaments = () => {
     fetchPastTournaments();
   }, []);
 
+  const updateTournamentStatus = async () => {
+    try {
+      await fetch('/api/admin/update-tournament-status', {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error updating tournament status:', error);
+    }
+  };
+
   const fetchPastTournaments = async () => {
     try {
+      // First update tournament status to move expired tournaments to past
+      await updateTournamentStatus();
+
       const response = await fetch('/api/admin/past-tournaments');
       if (response.ok) {
         const data = await response.json();

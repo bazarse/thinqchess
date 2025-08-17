@@ -183,6 +183,32 @@ const RegistrationsView = () => {
     }
   };
 
+  const clearDemoData = async () => {
+    if (window.confirm('⚠️ WARNING: This will delete ALL demo data including registrations, tournaments, blogs, and gallery images.\n\nThis action cannot be undone. Are you sure you want to continue?')) {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/admin/clear-demo-data', {
+          method: 'POST',
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`✅ Successfully cleared ${data.total_cleared} demo records`);
+          // Refresh the page to show empty state
+          fetchRegistrations();
+        } else {
+          const errorData = await response.json();
+          alert(`❌ Error clearing demo data: ${errorData.error}`);
+        }
+      } catch (error) {
+        console.error('Error clearing demo data:', error);
+        alert('❌ Error clearing demo data');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
 
 
   const handleLogout = async () => {
@@ -270,6 +296,18 @@ const RegistrationsView = () => {
                 }`}
               >
                 {exporting ? "Exporting..." : "📄 JSON"}
+              </button>
+
+              <button
+                onClick={clearDemoData}
+                disabled={loading}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  loading
+                    ? 'bg-gray-400 cursor-not-allowed text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                {loading ? "Clearing..." : "🗑️ Clear Demo Data"}
               </button>
             </div>
           </div>
