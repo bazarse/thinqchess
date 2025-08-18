@@ -23,6 +23,7 @@ export default function AdminLayout({ children }) {
 
   // Check authentication on mount
   useEffect(() => {
+    // Only check auth status, don't redirect
     checkAuthStatus();
   }, []);
 
@@ -47,19 +48,15 @@ export default function AdminLayout({ children }) {
       if (response.ok) {
         setIsAuthenticated(true);
       } else {
+        console.log('Authentication failed, but staying on current page');
         setIsAuthenticated(false);
-        if (pathname !== '/admin') {
-          window.location.href = '/admin';
-          return;
-        }
+        // Don't redirect - let the user stay on current page
+        // Only redirect if they're on a protected page and really not authenticated
       }
     } catch (error) {
-      console.log('Authentication check failed');
+      console.log('Authentication check failed, but staying on current page');
       setIsAuthenticated(false);
-      if (pathname !== '/admin') {
-        window.location.href = '/admin';
-        return;
-      }
+      // Don't redirect - let the user stay on current page
     } finally {
       setIsLoading(false);
     }
