@@ -3,18 +3,25 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(request) {
   try {
-    const token = request.cookies.get('admin-token')?.value;
+    // Check multiple sources for token
+    const cookieToken = request.cookies.get('admin-token')?.value;
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const sessionCookie = request.cookies.get('admin-session')?.value;
 
+    // Use cookie token first, then bearer token as fallback
+    const token = cookieToken || bearerToken;
+
     console.log('🔍 Verify request details:');
-    console.log('- admin-token:', token ? 'present' : 'missing');
+    console.log('- Cookie token:', cookieToken ? 'present' : 'missing');
+    console.log('- Bearer token:', bearerToken ? 'present' : 'missing');
+    console.log('- Final token:', token ? 'present' : 'missing');
     console.log('- admin-session:', sessionCookie ? 'present' : 'missing');
     console.log('- All cookies:', request.cookies.getAll().map(c => `${c.name}=${c.value}`));
-    console.log('- Request URL:', request.url);
-    console.log('- Request headers cookie:', request.headers.get('cookie'));
+    console.log('- Authorization header:', authHeader || 'missing');
 
     if (!token) {
-      console.log('❌ No token found, returning 401');
+      console.log('❌ No token found in cookies or headers, returning 401');
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }

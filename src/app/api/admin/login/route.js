@@ -71,6 +71,7 @@ export async function POST(request) {
       const response = NextResponse.json({
         success: true,
         message: 'Login successful',
+        token: token, // Send token in response for localStorage
         user: {
           email: email.includes('@') ? email : 'admin@thinqchess.com',
           role: 'admin'

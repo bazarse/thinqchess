@@ -21,8 +21,23 @@ const AdminLogin = () => {
     try {
       console.log('Checking auth status...');
       console.log('Document cookies:', document.cookie);
+
+      // Get token from localStorage as backup
+      const token = localStorage.getItem('admin-token');
+      console.log('localStorage token:', token ? 'present' : 'missing');
+
+      const headers = {
+        'credentials': 'include'
+      };
+
+      // Add Authorization header if token exists in localStorage
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/admin/verify', {
-        credentials: 'include'
+        credentials: 'include',
+        headers: headers
       });
       console.log('Verify response status:', response.status);
       if (response.ok) {
@@ -66,6 +81,13 @@ const AdminLogin = () => {
       if (response.ok) {
         console.log('Login successful, response:', data);
         console.log('Document cookies after login:', document.cookie);
+
+        // Store token in localStorage as backup
+        if (data.token) {
+          localStorage.setItem('admin-token', data.token);
+          console.log('✅ Token stored in localStorage');
+        }
+
         setIsLoggedIn(true);
 
         // Force immediate redirect without waiting
