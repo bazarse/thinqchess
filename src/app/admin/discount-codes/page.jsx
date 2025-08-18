@@ -13,15 +13,7 @@ const DiscountCodes = () => {
     is_active: true,
     code_type: 'manual'
   });
-  const [prefixCode, setPrefixCode] = useState({
-    prefix: '',
-    discount_percent: '',
-    usage_limit: '',
-    email_domain: '',
-    email_prefix: '',
-    match_type: 'domain', // 'domain' or 'email_prefix'
-    is_active: true
-  });
+
   const [message, setMessage] = useState("");
   const router = useRouter();
 
@@ -128,100 +120,8 @@ const DiscountCodes = () => {
     }
   };
 
-  const handleAddPrefixCode = async () => {
-    // Validation based on match type
-    if (!prefixCode.prefix || !prefixCode.discount_percent || !prefixCode.usage_limit) {
-      setMessage("Please fill all required fields for prefix-based coupon");
-      return;
-    }
 
-    if (prefixCode.match_type === 'domain' && !prefixCode.email_domain) {
-      setMessage("Please enter email domain for domain-based matching");
-      return;
-    }
 
-    if (prefixCode.match_type === 'email_prefix' && !prefixCode.email_prefix) {
-      setMessage("Please enter email prefix/name for email-based matching");
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/admin/discount-codes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: `${prefixCode.prefix}*`, // * indicates it's a prefix
-          discount_percent: parseFloat(prefixCode.discount_percent),
-          usage_limit: parseInt(prefixCode.usage_limit),
-          is_active: prefixCode.is_active,
-          code_type: 'prefix',
-          prefix: prefixCode.prefix,
-          email_domain: prefixCode.email_domain || null,
-          email_prefix: prefixCode.email_prefix || null,
-          match_type: prefixCode.match_type
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setDiscountCodes(prev => [...prev, data.discountCode]);
-        setPrefixCode({
-          prefix: '',
-          discount_percent: '',
-          usage_limit: '',
-          email_domain: '',
-          email_prefix: '',
-          match_type: 'domain',
-          is_active: true
-        });
-        setMessage("Prefix-based discount code added successfully!");
-        setTimeout(() => setMessage(""), 3000);
-      } else {
-        setMessage(data.error || "Failed to add prefix-based discount code");
-        setTimeout(() => setMessage(""), 5000);
-      }
-    } catch (error) {
-      console.error('Error adding prefix-based discount code:', error);
-      setMessage("Error adding prefix-based discount code");
-      setTimeout(() => setMessage(""), 5000);
-    }
-  };
-
-  const generateCouponForEmail = (email) => {
-    const emailParts = email.split('@');
-    const emailUsername = emailParts[0].toLowerCase();
-    const emailDomain = emailParts[1];
-
-    // Find matching prefix codes
-    const matchingPrefixCode = discountCodes.find(code => {
-      if (code.code_type !== 'prefix' || !code.is_active) {
-        return false;
-      }
-
-      if (code.match_type === 'domain') {
-        // Domain-based matching
-        return code.email_domain === emailDomain;
-      } else if (code.match_type === 'email_prefix') {
-        // Email prefix/name-based matching
-        const searchPrefix = code.email_prefix.toLowerCase();
-        return emailUsername.includes(searchPrefix);
-      }
-
-      return false;
-    });
-
-    if (matchingPrefixCode) {
-      // Generate unique coupon code
-      const timestamp = Date.now().toString().slice(-6);
-      const emailPrefix = emailUsername.slice(0, 3).toUpperCase();
-      return `${matchingPrefixCode.prefix}${emailPrefix}${timestamp}`;
-    }
-
-    return null;
-  };
 
   const toggleCodeStatus = async (id) => {
     const code = discountCodes.find(c => c.id === id);
@@ -374,126 +274,7 @@ const DiscountCodes = () => {
           </div>
         </div>
 
-        {/* Prefix-Based Email Coupons */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">📧 Prefix-Based Email Coupons</h2>
-          <p className="text-gray-600 mb-4">
-            Create discount codes that are automatically generated for users with specific email domains or email prefixes/names.
-          </p>
 
-          {/* Match Type Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Matching Type</label>
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="domain"
-                  checked={prefixCode.match_type === 'domain'}
-                  onChange={(e) => setPrefixCode(prev => ({ ...prev, match_type: e.target.value }))}
-                  className="mr-2"
-                />
-                <span className="text-sm">Email Domain (e.g., gmail.com)</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="email_prefix"
-                  checked={prefixCode.match_type === 'email_prefix'}
-                  onChange={(e) => setPrefixCode(prev => ({ ...prev, match_type: e.target.value }))}
-                  className="mr-2"
-                />
-                <span className="text-sm">Email Name/Prefix (e.g., kavita, student)</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Prefix</label>
-              <input
-                type="text"
-                value={prefixCode.prefix}
-                onChange={(e) => setPrefixCode(prev => ({ ...prev, prefix: e.target.value.toUpperCase() }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="STUDENT"
-                maxLength="10"
-              />
-              <p className="text-xs text-gray-500 mt-1">e.g., STUDENT, TEACHER</p>
-            </div>
-
-            {prefixCode.match_type === 'domain' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Domain</label>
-                <input
-                  type="text"
-                  value={prefixCode.email_domain}
-                  onChange={(e) => setPrefixCode(prev => ({ ...prev, email_domain: e.target.value.toLowerCase() }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  placeholder="gmail.com"
-                />
-                <p className="text-xs text-gray-500 mt-1">e.g., gmail.com, edu.in</p>
-              </div>
-            )}
-
-            {prefixCode.match_type === 'email_prefix' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Name/Prefix</label>
-                <input
-                  type="text"
-                  value={prefixCode.email_prefix}
-                  onChange={(e) => setPrefixCode(prev => ({ ...prev, email_prefix: e.target.value.toLowerCase() }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  placeholder="kavita"
-                />
-                <p className="text-xs text-gray-500 mt-1">e.g., kavita, student, teacher</p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
-              <input
-                type="number"
-                value={prefixCode.discount_percent}
-                onChange={(e) => setPrefixCode(prev => ({ ...prev, discount_percent: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="15"
-                min="1"
-                max="100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
-              <input
-                type="number"
-                value={prefixCode.usage_limit}
-                onChange={(e) => setPrefixCode(prev => ({ ...prev, usage_limit: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="50"
-                min="1"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={handleAddPrefixCode}
-                className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-medium transition-colors"
-              >
-                Add Prefix Code
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-2">How it works:</h3>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>Domain Matching:</strong> Users with matching email domains get auto-generated coupon codes</li>
-              <li>• <strong>Name Matching:</strong> Users with specific names/prefixes in email get auto-generated coupon codes</li>
-              <li>• Example 1: STUDENT prefix + user@gmail.com = STUDENTUSE123456</li>
-              <li>• Example 2: KAVITA prefix + kavita123@yahoo.com = KAVITAKAV123456</li>
-              <li>• Codes are unique and generated when user enters their email</li>
-            </ul>
-          </div>
-        </div>
 
         {/* Existing Codes */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
