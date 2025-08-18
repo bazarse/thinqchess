@@ -77,25 +77,27 @@ export async function POST(request) {
         }
       });
 
-      // Check if request is HTTPS to determine secure cookie setting
-      const isHttps = process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true';
-
-      // Set HTTP-only cookie with appropriate security settings
-      response.cookies.set('admin-token', token, {
+      // Set multiple cookie formats to ensure compatibility
+      const cookieOptions = {
         httpOnly: true,
-        secure: false, // Allow HTTP for development and HTTP servers
-        sameSite: 'lax', // More permissive for HTTP
+        secure: false, // Allow HTTP
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/'
-      });
+      };
 
-      console.log('✅ Login successful, token set with settings:', {
-        httpOnly: true,
+      // Set the main cookie
+      response.cookies.set('admin-token', token, cookieOptions);
+
+      // Also set a backup cookie without httpOnly for debugging
+      response.cookies.set('admin-session', 'active', {
         secure: false,
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000,
         path: '/'
       });
+
+      console.log('✅ Login successful, token set with settings:', cookieOptions);
       
       return response;
     } else {
