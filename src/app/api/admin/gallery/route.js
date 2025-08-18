@@ -155,27 +155,48 @@ export async function DELETE(request) {
 
     if (!id) {
       return NextResponse.json(
-        { error: 'Image ID is required' },
+        { error: 'Gallery item ID is required' },
         { status: 400 }
       );
     }
 
-    // Always use database
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    console.log(`🗑️ Deleting gallery item with ID: ${id}`);
 
-    const deleteStmt = db.prepare('DELETE FROM gallery_images WHERE id = ?');
-    deleteStmt.run(parseInt(id));
+    // Use SimpleDB for consistency
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
+
+    // First check if the item exists
+    const existingItem = await db.get('SELECT * FROM gallery_images WHERE id = ?', [parseInt(id)]);
+
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: 'Gallery item not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the item
+    const result = await db.run('DELETE FROM gallery_images WHERE id = ?', [parseInt(id)]);
+
+    if (result.changes === 0) {
+      return NextResponse.json(
+        { error: 'Failed to delete gallery item' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ Gallery item deleted successfully`);
 
     return NextResponse.json({
       success: true,
-      message: 'Image deleted successfully'
+      message: `${existingItem.type === 'video' ? 'Video' : 'Image'} deleted successfully`
     });
 
   } catch (error) {
-    console.error('Error deleting gallery image:', error);
+    console.error('❌ Error deleting gallery item:', error);
     return NextResponse.json(
-      { error: 'Failed to delete gallery image' },
+      { error: 'Failed to delete gallery item: ' + error.message },
       { status: 500 }
     );
   }

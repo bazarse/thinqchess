@@ -36,14 +36,16 @@ export default function AdminLayout({ children }) {
       } else {
         setIsAuthenticated(false);
         if (pathname !== '/admin') {
-          router.push('/admin');
+          window.location.href = '/admin';
+          return;
         }
       }
     } catch (error) {
       console.log('Authentication check failed');
       setIsAuthenticated(false);
       if (pathname !== '/admin') {
-        router.push('/admin');
+        window.location.href = '/admin';
+        return;
       }
     } finally {
       setIsLoading(false);

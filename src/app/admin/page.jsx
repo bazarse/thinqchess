@@ -68,10 +68,8 @@ const AdminLogin = () => {
         console.log('Document cookies after login:', document.cookie);
         setIsLoggedIn(true);
 
-        // Wait a bit before redirecting to ensure cookie is set
-        setTimeout(() => {
-          router.push('/admin/dashboard');
-        }, 100);
+        // Force immediate redirect without waiting
+        window.location.href = '/admin/dashboard';
       } else {
         setError(data.error || 'Login failed');
       }
