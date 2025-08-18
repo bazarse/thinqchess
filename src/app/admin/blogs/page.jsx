@@ -27,16 +27,33 @@ const BlogManagement = () => {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/admin/verify');
+      // Get token from localStorage
+      const token = localStorage.getItem('admin-token');
+
+      const headers = {
+        'credentials': 'include'
+      };
+
+      // Add Authorization header if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch('/api/admin/verify', {
+        credentials: 'include',
+        headers: headers
+      });
+
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
       } else {
-        router.push('/admin');
+        console.log('Blogs page: Auth failed but staying on page');
+        // Don't redirect - let user stay on blogs page
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      router.push('/admin');
+      // Don't redirect - let user stay on blogs page
     } finally {
       setLoading(false);
     }
