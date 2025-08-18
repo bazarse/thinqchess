@@ -77,22 +77,22 @@ export async function POST(request) {
         }
       });
 
-      // Determine if we're in production (secure cookies)
-      const isProduction = process.env.NODE_ENV === 'production';
-      
+      // Check if request is HTTPS to determine secure cookie setting
+      const isHttps = process.env.NODE_ENV === 'production' && process.env.HTTPS === 'true';
+
       // Set HTTP-only cookie with appropriate security settings
       response.cookies.set('admin-token', token, {
         httpOnly: true,
-        secure: isProduction, // Use secure cookies in production
-        sameSite: isProduction ? 'strict' : 'lax',
+        secure: false, // Allow HTTP for development and HTTP servers
+        sameSite: 'lax', // More permissive for HTTP
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/'
       });
 
       console.log('✅ Login successful, token set with settings:', {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000,
         path: '/'
       });
