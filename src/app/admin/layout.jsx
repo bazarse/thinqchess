@@ -28,8 +28,21 @@ export default function AdminLayout({ children }) {
 
   const checkAuthStatus = async () => {
     try {
+      // Get token from localStorage as backup
+      const token = localStorage.getItem('admin-token');
+
+      const headers = {
+        'credentials': 'include'
+      };
+
+      // Add Authorization header if token exists in localStorage
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch('/api/admin/verify', {
-        credentials: 'include'
+        credentials: 'include',
+        headers: headers
       });
       if (response.ok) {
         setIsAuthenticated(true);
