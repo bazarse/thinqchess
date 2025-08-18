@@ -81,7 +81,7 @@ export async function POST(request) {
       const cookieOptions = {
         httpOnly: true,
         secure: false, // Allow HTTP
-        sameSite: 'lax',
+        sameSite: 'none', // Most permissive for cross-origin
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/'
       };
@@ -92,12 +92,19 @@ export async function POST(request) {
       // Also set a backup cookie without httpOnly for debugging
       response.cookies.set('admin-session', 'active', {
         secure: false,
-        sameSite: 'lax',
+        sameSite: 'none',
         maxAge: 24 * 60 * 60 * 1000,
         path: '/'
       });
 
+      // Set additional headers to ensure cookies are sent
+      response.headers.set('Set-Cookie', [
+        `admin-token=${token}; Path=/; Max-Age=${24 * 60 * 60}; SameSite=None; Secure=false`,
+        `admin-session=active; Path=/; Max-Age=${24 * 60 * 60}; SameSite=None; Secure=false`
+      ].join(', '));
+
       console.log('✅ Login successful, token set with settings:', cookieOptions);
+      console.log('✅ Additional Set-Cookie headers added for compatibility');
       
       return response;
     } else {
