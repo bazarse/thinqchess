@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Use SimpleDB for Vercel compatibility
-    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
 
     // Auto-update tournament status
