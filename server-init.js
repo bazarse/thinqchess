@@ -9,9 +9,6 @@ console.log('🚀 ThinQ Chess Server Initialization...');
 require('dotenv').config({ path: '.env.production' });
 require('dotenv').config({ path: '.env.local' });
 
-// Import database initialization
-const { initializeDatabase } = require('./lib/database.js');
-
 async function initializeServer() {
   try {
     console.log('🔧 Environment:', {
@@ -20,9 +17,12 @@ async function initializeServer() {
       DATABASE_TYPE: process.env.DATABASE_TYPE
     });
 
-    // Initialize database
+    // Initialize database using SimpleDB directly
     console.log('📊 Initializing database...');
-    await initializeDatabase();
+    const SimpleDatabase = (await import('./lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
+
+    console.log('✅ Database initialized successfully!');
     
     console.log('✅ Server initialization completed successfully!');
     console.log('🎉 ThinQ Chess is ready to serve!');
