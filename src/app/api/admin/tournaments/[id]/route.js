@@ -43,12 +43,23 @@ export async function PATCH(request, { params }) {
     const tournamentId = resolvedParams.id;
     const body = await request.json();
 
-    // Update tournament status
+    console.log('🔄 Updating tournament status:', {
+      tournamentId,
+      status: body.status,
+      is_active: body.is_active,
+      is_active_type: typeof body.is_active
+    });
+
+    // Update tournament status - ensure is_active is properly converted to integer
+    const isActiveValue = body.is_active === true || body.is_active === 1 || body.is_active === '1' ? 1 : 0;
+
     const result = await db.run(`
       UPDATE tournaments
       SET status = ?, is_active = ?, updated_at = ?
       WHERE id = ?
-    `, [body.status, body.is_active, new Date().toISOString(), tournamentId]);
+    `, [body.status, isActiveValue, new Date().toISOString(), tournamentId]);
+
+    console.log('✅ Tournament update result:', result);
 
     if (result.changes === 0) {
       return NextResponse.json(

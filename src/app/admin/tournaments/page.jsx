@@ -215,6 +215,18 @@ const TournamentManagement = () => {
       return;
     }
 
+    // Age validation - only if both min and max age are provided
+    if (newCategory.min_age && newCategory.max_age) {
+      const minAge = parseInt(newCategory.min_age);
+      const maxAge = parseInt(newCategory.max_age);
+
+      if (minAge >= maxAge) {
+        setMessage('Maximum age must be greater than minimum age');
+        setTimeout(() => setMessage(''), 3000);
+        return;
+      }
+    }
+
     // Check if category name already exists
     const existingCategory = newTournament.categories.find(cat =>
       cat.name.toLowerCase() === newCategory.name.toLowerCase()
@@ -225,9 +237,17 @@ const TournamentManagement = () => {
       return;
     }
 
+    // Create category with proper age handling
+    const categoryToAdd = {
+      ...newCategory,
+      id: Date.now(),
+      min_age: newCategory.min_age || '', // Keep empty string if not provided
+      max_age: newCategory.max_age || ''  // Keep empty string if not provided
+    };
+
     setNewTournament(prev => ({
       ...prev,
-      categories: [...prev.categories, { ...newCategory, id: Date.now() }]
+      categories: [...prev.categories, categoryToAdd]
     }));
 
     setNewCategory({
@@ -566,6 +586,8 @@ const TournamentManagement = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Tournament Categories</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Add categories for your tournament. If no categories are added, a default "Open Category" will be created.
+                <br />
+                <strong>Age Guidelines:</strong> Under 8, Under 10, Under 12, Under 16, Open (no age limit)
               </p>
 
               {/* Add New Category Form */}
@@ -605,7 +627,7 @@ const TournamentManagement = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Min Age</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Min Age (Optional)</label>
                     <input
                       type="number"
                       value={newCategory.min_age}
@@ -617,11 +639,11 @@ const TournamentManagement = () => {
                         }
                       }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      placeholder="8"
+                      placeholder="8 (leave empty for no limit)"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Max Age</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Max Age (Optional)</label>
                     <input
                       type="number"
                       value={newCategory.max_age}
@@ -633,7 +655,7 @@ const TournamentManagement = () => {
                         }
                       }}
                       className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      placeholder="12"
+                      placeholder="12 (leave empty for no limit)"
                     />
                   </div>
                   <div>

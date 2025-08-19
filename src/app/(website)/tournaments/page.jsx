@@ -332,7 +332,17 @@ const Tournaments = () => {
       if (selectedTournamentType && value) {
         const selectedType = tournamentTypes.find(type => type.id == selectedTournamentType); // Use == for loose comparison
         if (selectedType && !isEligibleForTournamentType(value, selectedType)) {
-          setErrorMessage(`Age not eligible for ${selectedType.name}. Please select appropriate tournament type.`);
+          // Create helpful age range message
+          let ageRange = '';
+          if (selectedType.min_age && selectedType.max_age) {
+            ageRange = `Age ${selectedType.min_age}-${selectedType.max_age}`;
+          } else if (selectedType.min_age) {
+            ageRange = `Age ${selectedType.min_age}+`;
+          } else if (selectedType.max_age) {
+            ageRange = `Age up to ${selectedType.max_age}`;
+          }
+
+          setErrorMessage(`Age not eligible for ${selectedType.name}. ${ageRange} required. Please select appropriate tournament category.`);
         }
       }
     }
@@ -342,7 +352,10 @@ const Tournaments = () => {
   // Check if age is eligible for tournament type
   const isEligibleForTournamentType = (dob, tournamentType) => {
     if (!dob || !tournamentType) return true;
-    if (!tournamentType.min_age && !tournamentType.max_age) return true; // Open category
+
+    // If no age restrictions (Open category), always eligible
+    if (!tournamentType.min_age && !tournamentType.max_age) return true;
+    if (tournamentType.min_age === '' && tournamentType.max_age === '') return true;
 
     const birthDate = new Date(dob);
     const today = new Date();
@@ -353,8 +366,17 @@ const Tournaments = () => {
       age--;
     }
 
-    if (tournamentType.min_age && age < parseInt(tournamentType.min_age)) return false;
-    if (tournamentType.max_age && age > parseInt(tournamentType.max_age)) return false;
+    // Check minimum age (only if specified)
+    if (tournamentType.min_age && tournamentType.min_age !== '') {
+      const minAge = parseInt(tournamentType.min_age);
+      if (age < minAge) return false;
+    }
+
+    // Check maximum age (only if specified)
+    if (tournamentType.max_age && tournamentType.max_age !== '') {
+      const maxAge = parseInt(tournamentType.max_age);
+      if (age > maxAge) return false;
+    }
 
     return true;
   };
@@ -392,11 +414,20 @@ const Tournaments = () => {
     if (!isValidAge(formData.dob)) {
       const selectedType = tournamentTypes.find(type => type.id == selectedTournamentType);
       if (selectedType) {
-        const ageRange = selectedType.min_age || selectedType.max_age ?
-          `Age ${selectedType.min_age || 'Any'}-${selectedType.max_age || 'Any'}` :
-          'Age requirements';
+        // Create helpful age range message
+        let ageRange = '';
+        if (selectedType.min_age && selectedType.max_age) {
+          ageRange = `Age ${selectedType.min_age}-${selectedType.max_age}`;
+        } else if (selectedType.min_age) {
+          ageRange = `Age ${selectedType.min_age}+`;
+        } else if (selectedType.max_age) {
+          ageRange = `Age up to ${selectedType.max_age}`;
+        } else {
+          ageRange = 'Open to all ages';
+        }
+
         setErrorMessage(
-          `Age not eligible for ${selectedType.name}. ${ageRange} required.`
+          `Age not eligible for ${selectedType.name}. ${ageRange} required. Please select appropriate tournament category.`
         );
       } else {
         setErrorMessage("Please select a tournament category.");
