@@ -111,12 +111,12 @@ const ComingSoon = () => {
             </h3>
             <ul className="space-y-3">
               {[
-                "Age-wise categories (Under 8, 10, 12, 16, Open)",
-                "FIDE-rated tournament games",
-                "Cash prizes and trophies for winners",
-                "Professional arbiters and equipment",
-                "Live streaming and commentary",
-                "Certificates for all participants"
+                "Age-wise categories (under 8, 10, 12, 16, Open)",
+                "Fide-rated/Unrated Tournament games",
+                "Cash prizes, trophies and medals for winners",
+                "Certificates for all participants",
+                "Professional arbiters",
+                "Real-time game results published"
               ].map((item, index) => (
                 <li key={index} className="flex items-start gap-3">
                   <span className="text-[#FFB31A] mt-1">✓</span>
@@ -227,9 +227,9 @@ const ComingSoon = () => {
           </div>
 
           <div className="flex justify-center gap-6 mt-6">
-            <a href="#" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">Facebook</a>
-            <a href="#" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">Instagram</a>
-            <a href="#" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">WhatsApp</a>
+            <a href="https://www.facebook.com/thinqchess" target="_blank" rel="noopener noreferrer" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">Facebook</a>
+            <a href="https://www.instagram.com/thinqchess/" target="_blank" rel="noopener noreferrer" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">Instagram</a>
+            <a href="https://wa.me/917975820187" target="_blank" rel="noopener noreferrer" className="text-[#2B3AA0] hover:text-[#FFB31A] transition-colors font-medium">WhatsApp</a>
           </div>
         </motion.div>
       </div>

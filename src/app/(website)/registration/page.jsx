@@ -7,24 +7,8 @@ import MultiStepFormTwo from "@/components/forms/MultiStepFormTwo";
 import ComingSoon from "@/components/ComingSoon";
 
 const RegistrationPage = () => {
+  // Always show registration form for course registration
   const [showRegistrationForm, setShowRegistrationForm] = useState(true);
-
-  // Fetch page status on component mount
-  useEffect(() => {
-    const fetchPageStatus = async () => {
-      try {
-        const response = await fetch('/api/admin/page-status');
-        if (response.ok) {
-          const status = await response.json();
-          setShowRegistrationForm(status.course_registration_active);
-        }
-      } catch (error) {
-        console.error('Error fetching page status:', error);
-      }
-    };
-
-    fetchPageStatus();
-  }, []);
 
   return (
     <>

@@ -10,6 +10,7 @@ const DiscountCodes = () => {
     code: '',
     discount_percent: '',
     usage_limit: '',
+    end_date: '',
     is_active: true,
     code_type: 'manual'
   });
@@ -87,8 +88,8 @@ const DiscountCodes = () => {
   };
 
   const handleAddCode = async () => {
-    if (!newCode.code || !newCode.discount_percent || !newCode.usage_limit) {
-      setMessage("Please fill all fields");
+    if (!newCode.code || !newCode.discount_percent) {
+      setMessage("Please fill code and discount percentage");
       return;
     }
 
@@ -101,7 +102,8 @@ const DiscountCodes = () => {
       const requestBody = {
         code: codeUpper,
         discount_percent: parseFloat(newCode.discount_percent),
-        usage_limit: parseInt(newCode.usage_limit),
+        usage_limit: newCode.usage_limit ? parseInt(newCode.usage_limit) : 100, // Default to 100 if not specified
+        end_date: newCode.end_date || null,
         is_active: newCode.is_active,
         code_type: isPrefix ? 'prefix' : 'manual'
       };
@@ -123,7 +125,7 @@ const DiscountCodes = () => {
 
       if (data.success) {
         setDiscountCodes(prev => [...prev, data.discountCode]);
-        setNewCode({ code: '', discount_percent: '', usage_limit: '', is_active: true, code_type: 'manual' });
+        setNewCode({ code: '', discount_percent: '', usage_limit: '', end_date: '', is_active: true, code_type: 'manual' });
         setMessage(`${isPrefix ? 'Prefix' : 'Discount'} code added successfully!`);
         setTimeout(() => setMessage(""), 3000);
       } else {
@@ -261,14 +263,24 @@ const DiscountCodes = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit (Optional)</label>
               <input
                 type="number"
                 value={newCode.usage_limit}
                 onChange={(e) => setNewCode(prev => ({ ...prev, usage_limit: e.target.value }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="100"
+                placeholder="100 (default)"
                 min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">End Date (Optional)</label>
+              <input
+                type="date"
+                value={newCode.end_date}
+                onChange={(e) => setNewCode(prev => ({ ...prev, end_date: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                min={new Date().toISOString().split('T')[0]}
               />
             </div>
             <div className="flex items-end">

@@ -182,12 +182,17 @@ const Tournaments = () => {
     }
   };
 
-  // Check if the user is not older than 16 years
+  // Check age eligibility based on selected tournament category
   const isValidAge = (dob) => {
     if (!dob) return false;
-    const cutoffDate = new Date("2009-01-01");
-    const userDOB = new Date(dob);
-    return userDOB >= cutoffDate;
+
+    // If no tournament type selected, don't validate yet
+    if (!selectedTournamentType) return true;
+
+    const selectedType = tournamentTypes.find(type => type.id == selectedTournamentType);
+    if (!selectedType) return true;
+
+    return isEligibleForTournamentType(dob, selectedType);
   };
 
   // Validate discount code
@@ -383,11 +388,19 @@ const Tournaments = () => {
   const handlePayment = async (e) => {
     e.preventDefault(); // Prevent default form submission
 
-    // Basic validation (you can expand this)
+    // Basic validation - check age eligibility for selected tournament type
     if (!isValidAge(formData.dob)) {
-      setErrorMessage(
-        "Only students aged 16 or below (born on or after 01-Jan-2009) are eligible to register."
-      );
+      const selectedType = tournamentTypes.find(type => type.id == selectedTournamentType);
+      if (selectedType) {
+        const ageRange = selectedType.min_age || selectedType.max_age ?
+          `Age ${selectedType.min_age || 'Any'}-${selectedType.max_age || 'Any'}` :
+          'Age requirements';
+        setErrorMessage(
+          `Age not eligible for ${selectedType.name}. ${ageRange} required.`
+        );
+      } else {
+        setErrorMessage("Please select a tournament category.");
+      }
       return;
     }
 
@@ -876,10 +889,9 @@ const Tournaments = () => {
                 </div>
               </div>
 
-              {!isAgeValid && (
+              {!isAgeValid && formData.dob && selectedTournamentType && (
                 <p className="text-red-600 mt-2 text-sm">
-                  Only students aged 16 or below (born on or after 01-Jan-2009)
-                  are eligible.
+                  Age not eligible for selected tournament category.
                 </p>
               )}
 
@@ -1083,14 +1095,13 @@ const Tournaments = () => {
                 <button
                   type="submit"
                   className={`bg-[#FFB31A] text-[18px] text-white py-2 px-6 rounded ${
-                    isSubmitting || !isAgeValid
+                    isSubmitting || (!isAgeValid && formData.dob && selectedTournamentType)
                       ? "cursor-not-allowed opacity-70"
                       : "cursor-pointer"
                   }`}
-                  disabled={isSubmitting || !isAgeValid} // Disable during submission
+                  disabled={isSubmitting || (!isAgeValid && formData.dob && selectedTournamentType)} // Only disable if age is invalid for selected category
                 >
-                  {/* {isSubmitting ? "Paying..." : "Pay Now"} */}
-                  Pay Now
+                  {isSubmitting ? "Processing..." : "Pay Now"}
                 </button>
               </div>
                 </form>

@@ -44,13 +44,13 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml', sizes: '32x32' },
-      { url: '/favicon.ico', sizes: '16x16' }
+      { url: '/images/chessqueen.png', type: 'image/png', sizes: '32x32' },
+      { url: '/images/chessqueen.png', sizes: '16x16' }
     ],
     apple: [
-      { url: '/favicon.svg', sizes: '180x180', type: 'image/svg+xml' }
+      { url: '/images/chessqueen.png', sizes: '180x180', type: 'image/png' }
     ],
-    shortcut: '/favicon.ico',
+    shortcut: '/images/chessqueen.png',
   },
   openGraph: {
     title: "ThinQ Chess Academy",

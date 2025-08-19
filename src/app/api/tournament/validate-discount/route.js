@@ -67,6 +67,18 @@ export async function POST(request) {
       );
     }
 
+    // Double-check if the discount code is active
+    if (!discountData.is_active || discountData.is_active === 0) {
+      console.log('❌ Discount code is deactivated:', code.toUpperCase());
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'This discount code has been deactivated'
+        },
+        { status: 400 }
+      );
+    }
+
     // Check usage limit
     if (discountData.used_count >= discountData.usage_limit) {
       console.log('❌ Usage limit exceeded for code:', code.toUpperCase());
