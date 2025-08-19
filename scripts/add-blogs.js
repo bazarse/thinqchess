@@ -1,14 +1,15 @@
 // Script to add the two blog posts to the database
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
 
 // Add the project root to the path so we can import our database
 process.chdir(path.join(__dirname, '..'));
 
 async function addBlogs() {
   try {
-    // Import the database
-    const { getDB } = require('../lib/database.js');
-    const db = getDB();
+    // Connect directly to SQLite database
+    const dbPath = path.join(__dirname, '..', 'database.sqlite');
+    const db = new sqlite3.Database(dbPath);
 
     console.log('🚀 Adding blog posts to database...');
 
@@ -90,43 +91,68 @@ Ready to give your child a lifelong advantage? Register for a trial class today.
       created_at: "2025-06-01 00:00:00"
     };
 
-    // Check if blogs already exist
-    const existingBlog1 = db.prepare('SELECT id FROM blogs WHERE slug = ?').get(blog1.slug);
-    const existingBlog2 = db.prepare('SELECT id FROM blogs WHERE slug = ?').get(blog2.slug);
+    // Check if blogs already exist and add them
+    db.serialize(() => {
+      // Check if blog 1 exists
+      db.get('SELECT id FROM blogs WHERE slug = ?', [blog1.slug], (err, row) => {
+        if (err) {
+          console.error('Error checking blog 1:', err);
+          return;
+        }
 
-    if (existingBlog1) {
-      console.log('📝 Updating existing blog 1...');
-      db.prepare(`
-        UPDATE blogs 
-        SET title = ?, content = ?, excerpt = ?, author = ?, status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE slug = ?
-      `).run(blog1.title, blog1.content, blog1.excerpt, blog1.author, blog1.status, blog1.tags, blog1.featured_image, blog1.slug);
-    } else {
-      console.log('➕ Adding new blog 1...');
-      db.prepare(`
-        INSERT INTO blogs (title, content, excerpt, slug, author, status, tags, featured_image, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(blog1.title, blog1.content, blog1.excerpt, blog1.slug, blog1.author, blog1.status, blog1.tags, blog1.featured_image, blog1.created_at);
-    }
+        if (row) {
+          console.log('📝 Updating existing blog 1...');
+          db.run(`
+            UPDATE blogs
+            SET title = ?, content = ?, excerpt = ?, author = ?, status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE slug = ?
+          `, [blog1.title, blog1.content, blog1.excerpt, blog1.author, blog1.status, blog1.tags, blog1.featured_image, blog1.slug]);
+        } else {
+          console.log('➕ Adding new blog 1...');
+          db.run(`
+            INSERT INTO blogs (title, content, excerpt, slug, author, status, tags, featured_image, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [blog1.title, blog1.content, blog1.excerpt, blog1.slug, blog1.author, blog1.status, blog1.tags, blog1.featured_image, blog1.created_at]);
+        }
+      });
 
-    if (existingBlog2) {
-      console.log('📝 Updating existing blog 2...');
-      db.prepare(`
-        UPDATE blogs 
-        SET title = ?, content = ?, excerpt = ?, author = ?, status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE slug = ?
-      `).run(blog2.title, blog2.content, blog2.excerpt, blog2.author, blog2.status, blog2.tags, blog2.featured_image, blog2.slug);
-    } else {
-      console.log('➕ Adding new blog 2...');
-      db.prepare(`
-        INSERT INTO blogs (title, content, excerpt, slug, author, status, tags, featured_image, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(blog2.title, blog2.content, blog2.excerpt, blog2.slug, blog2.author, blog2.status, blog2.tags, blog2.featured_image, blog2.created_at);
-    }
+      // Check if blog 2 exists
+      db.get('SELECT id FROM blogs WHERE slug = ?', [blog2.slug], (err, row) => {
+        if (err) {
+          console.error('Error checking blog 2:', err);
+          return;
+        }
 
-    console.log('✅ Blog posts added successfully!');
-    console.log('📚 Blog 1: Online vs Offline Chess Coaching');
-    console.log('📚 Blog 2: Benefits of Learning Chess at a Young Age');
+        if (row) {
+          console.log('📝 Updating existing blog 2...');
+          db.run(`
+            UPDATE blogs
+            SET title = ?, content = ?, excerpt = ?, author = ?, status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE slug = ?
+          `, [blog2.title, blog2.content, blog2.excerpt, blog2.author, blog2.status, blog2.tags, blog2.featured_image, blog2.slug]);
+        } else {
+          console.log('➕ Adding new blog 2...');
+          db.run(`
+            INSERT INTO blogs (title, content, excerpt, slug, author, status, tags, featured_image, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [blog2.title, blog2.content, blog2.excerpt, blog2.slug, blog2.author, blog2.status, blog2.tags, blog2.featured_image, blog2.created_at]);
+        }
+      });
+    });
+
+    // Close database connection after operations
+    setTimeout(() => {
+      db.close((err) => {
+        if (err) {
+          console.error('Error closing database:', err);
+        } else {
+          console.log('✅ Blog posts added successfully!');
+          console.log('📚 Blog 1: Online vs Offline Chess Coaching');
+          console.log('📚 Blog 2: Benefits of Learning Chess at a Young Age');
+          console.log('🔒 Database connection closed.');
+        }
+      });
+    }, 1000); // Wait 1 second for operations to complete
 
   } catch (error) {
     console.error('❌ Error adding blogs:', error);

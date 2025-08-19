@@ -44,13 +44,13 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: '/images/chessqueen.png', type: 'image/png', sizes: '32x32' },
-      { url: '/images/chessqueen.png', sizes: '16x16' }
+      { url: '/queen-favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: '32x32' }
     ],
     apple: [
-      { url: '/images/chessqueen.png', sizes: '180x180', type: 'image/png' }
+      { url: '/queen-favicon.svg', sizes: '180x180', type: 'image/svg+xml' }
     ],
-    shortcut: '/images/chessqueen.png',
+    shortcut: '/queen-favicon.svg',
   },
   openGraph: {
     title: "ThinQ Chess Academy",
@@ -126,7 +126,7 @@ export default function RootLayout({ children }) {
         />
         <meta
           property="og:image"
-          content="https://thinqchess.com/images/favicon.png"
+          content="https://thinqchess.com/queen-favicon.svg"
         />
         <meta property="og:url" content="https://thinqchess.com" />
         <meta property="og:type" content="website" />
@@ -140,11 +140,11 @@ export default function RootLayout({ children }) {
         />
         <meta
           name="twitter:image"
-          content="https://thinqchess.com/images/favicon.png"
+          content="https://thinqchess.com/queen-favicon.svg"
         />
 
         {/* Favicon */}
-        <link rel="icon" href="/favicon.svg" />
+        <link rel="icon" href="/queen-favicon.svg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased overflow-x-hidden`}
