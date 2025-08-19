@@ -18,18 +18,18 @@ export async function POST(request) {
 
     console.log('🔍 Validating discount code:', code.toUpperCase());
 
-    // First try to find exact code match
-    let discountData = await db.get('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1', [code.toUpperCase()]);
+    // First try to find exact code match - ensure is_active is truly 1
+    let discountData = await db.get('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1 AND is_active != 0', [code.toUpperCase()]);
     console.log('🔍 Exact match result:', discountData);
 
     // If no exact match, check for prefix codes
     if (!discountData) {
       console.log('🔍 No exact match found, checking for prefix codes...');
 
-      // Check if the entered code starts with any existing prefix
+      // Check if the entered code starts with any existing prefix - ensure is_active is truly 1
       const allPrefixCodes = await db.all(`
         SELECT * FROM discount_codes
-        WHERE code_type = 'prefix' AND is_active = 1 AND used_count < usage_limit
+        WHERE code_type = 'prefix' AND is_active = 1 AND is_active != 0 AND used_count < usage_limit
       `);
 
       console.log('🔍 Available prefix codes:', allPrefixCodes);
@@ -48,7 +48,7 @@ export async function POST(request) {
         const prefix = code.split('_')[0] + '_';
         console.log('🔍 Trying direct prefix match for:', prefix);
 
-        const directPrefixMatch = await db.get('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1', [prefix]);
+        const directPrefixMatch = await db.get('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1 AND is_active != 0', [prefix]);
         if (directPrefixMatch) {
           discountData = directPrefixMatch;
           console.log('✅ Found direct prefix match:', discountData);
@@ -67,9 +67,9 @@ export async function POST(request) {
       );
     }
 
-    // Double-check if the discount code is active
-    if (!discountData.is_active || discountData.is_active === 0) {
-      console.log('❌ Discount code is deactivated:', code.toUpperCase());
+    // Triple-check if the discount code is active (multiple validation layers)
+    if (!discountData.is_active || discountData.is_active === 0 || discountData.is_active === false || discountData.is_active === "0") {
+      console.log('❌ Discount code is deactivated:', code.toUpperCase(), 'is_active value:', discountData.is_active);
       return NextResponse.json(
         {
           valid: false,

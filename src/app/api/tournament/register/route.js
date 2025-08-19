@@ -76,7 +76,36 @@ export async function POST(request) {
 
     // Update discount code usage if used
     if (body.discount_code) {
-      db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ?').run(body.discount_code);
+      console.log('🔄 Updating discount code usage for:', body.discount_code);
+
+      // First try exact match
+      let updateResult = db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ? AND is_active = 1').run(body.discount_code);
+
+      // If no exact match and code contains underscore, try prefix match
+      if (updateResult.changes === 0 && body.discount_code.includes('_')) {
+        const prefix = body.discount_code.split('_')[0] + '_';
+        console.log('🔄 Trying prefix update for:', prefix);
+        updateResult = db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE code = ? AND is_active = 1').run(prefix);
+      }
+
+      // If still no match, try finding any prefix that matches
+      if (updateResult.changes === 0) {
+        const allPrefixCodes = db.prepare(`
+          SELECT * FROM discount_codes
+          WHERE code_type = 'prefix' AND is_active = 1
+        `).all();
+
+        for (const prefixCode of allPrefixCodes) {
+          const prefix = prefixCode.code || prefixCode.prefix;
+          if (prefix && body.discount_code.toUpperCase().startsWith(prefix.toUpperCase())) {
+            console.log('🔄 Updating prefix code usage:', prefix);
+            db.prepare('UPDATE discount_codes SET used_count = used_count + 1 WHERE id = ?').run(prefixCode.id);
+            break;
+          }
+        }
+      }
+
+      console.log('✅ Discount code usage updated');
     }
 
     console.log('✅ Tournament Registration Saved:', savedRegistration);
