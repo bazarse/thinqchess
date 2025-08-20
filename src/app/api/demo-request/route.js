@@ -224,21 +224,41 @@ export async function PUT(request) {
       );
     }
 
+    console.log('🔄 Updating demo request:', {
+      id,
+      currentStatus: existing.status,
+      currentDemoCompleted: existing.demo_completed,
+      newStatus: status,
+      newDemoCompleted: demo_completed
+    });
+
+    // Prepare update values
+    const updateValues = {
+      status: status || existing.status,
+      demo_completed: demo_completed !== undefined ? demo_completed : existing.demo_completed,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('🔧 Update values:', updateValues);
+
     // Update demo request
     const result = await db.run(`
       UPDATE demo_requests
       SET status = ?, demo_completed = ?, updated_at = ?
       WHERE id = ?
     `, [
-      status || existing.status,
-      demo_completed !== undefined ? demo_completed : existing.demo_completed,
-      new Date().toISOString(),
+      updateValues.status,
+      updateValues.demo_completed,
+      updateValues.updated_at,
       id
     ]);
 
+    console.log('✅ Demo request update result:', result);
+
     if (result.changes === 0) {
+      console.log('❌ No changes made to demo request');
       return NextResponse.json(
-        { error: 'Failed to update demo request' },
+        { error: 'Failed to update demo request - no changes made' },
         { status: 500 }
       );
     }

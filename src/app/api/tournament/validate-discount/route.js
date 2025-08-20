@@ -18,9 +18,22 @@ export async function POST(request) {
 
     console.log('🔍 Validating discount code:', code.toUpperCase());
 
+    // First check if code exists at all (for debugging)
+    const codeExists = await db.get('SELECT * FROM discount_codes WHERE code = ?', [code.toUpperCase()]);
+    console.log('🔍 Code exists check:', codeExists);
+
     // First try to find exact code match - ensure is_active is truly 1
     let discountData = await db.get('SELECT * FROM discount_codes WHERE code = ? AND is_active = 1 AND is_active != 0', [code.toUpperCase()]);
     console.log('🔍 Exact match result:', discountData);
+
+    // Additional validation - check if code is deactivated
+    if (!discountData && codeExists) {
+      console.log('❌ Code exists but is deactivated:', {
+        code: codeExists.code,
+        is_active: codeExists.is_active,
+        is_active_type: typeof codeExists.is_active
+      });
+    }
 
     // If no exact match, check for prefix codes
     if (!discountData) {
@@ -58,6 +71,18 @@ export async function POST(request) {
 
     if (!discountData) {
       console.log('❌ No discount code found for:', code.toUpperCase());
+
+      // Check if it's a deactivated code
+      if (codeExists && (codeExists.is_active === 0 || codeExists.is_active === false)) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error: 'This discount code has been deactivated'
+          },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
         {
           valid: false,

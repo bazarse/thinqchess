@@ -186,29 +186,55 @@ export async function PUT(request) {
       await db.run('UPDATE tournaments SET is_active = 0');
     }
 
+    // Prepare update values with proper handling
+    const updateValues = {
+      name: name || existing.name,
+      description: description !== undefined ? description : existing.description,
+      start_date: tournament_date !== undefined ? tournament_date : (start_date !== undefined ? start_date : existing.start_date),
+      end_date: tournament_date !== undefined ? tournament_date : (end_date !== undefined ? end_date : existing.end_date),
+      registration_start_date: registration_start !== undefined ? registration_start : existing.registration_start_date,
+      registration_end_date: registration_end !== undefined ? registration_end : existing.registration_end_date,
+      flyer_image: flyer_image !== undefined ? flyer_image : existing.flyer_image,
+      is_active: is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+      categories: categories !== undefined ? (typeof categories === 'string' ? categories : JSON.stringify(categories)) : existing.categories,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('🔧 Final update values:', updateValues);
+
     // Update tournament
-    await db.run(`
+    const result = await db.run(`
       UPDATE tournaments
       SET name = ?, description = ?, start_date = ?, end_date = ?,
           registration_start_date = ?, registration_end_date = ?, flyer_image = ?,
           is_active = ?, categories = ?, updated_at = ?
       WHERE id = ?
     `, [
-      name || existing.name,
-      description !== undefined ? description : existing.description,
-      tournament_date !== undefined ? tournament_date : (start_date !== undefined ? start_date : existing.start_date),
-      tournament_date !== undefined ? tournament_date : (end_date !== undefined ? end_date : existing.end_date),
-      registration_start !== undefined ? registration_start : existing.registration_start_date,
-      registration_end !== undefined ? registration_end : existing.registration_end_date,
-      flyer_image !== undefined ? flyer_image : existing.flyer_image,
-      is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
-      categories !== undefined ? categories : existing.categories,
-      new Date().toISOString(),
+      updateValues.name,
+      updateValues.description,
+      updateValues.start_date,
+      updateValues.end_date,
+      updateValues.registration_start_date,
+      updateValues.registration_end_date,
+      updateValues.flyer_image,
+      updateValues.is_active,
+      updateValues.categories,
+      updateValues.updated_at,
       id
     ]);
 
+    console.log('✅ Tournament update result:', result);
+
+    if (result.changes === 0) {
+      console.log('❌ No changes made to tournament');
+      return NextResponse.json(
+        { error: 'No changes were made to the tournament' },
+        { status: 400 }
+      );
+    }
+
     // Get updated tournament
-    const updatedTournament = db.prepare('SELECT * FROM tournaments WHERE id = ?').get(id);
+    const updatedTournament = await db.get('SELECT * FROM tournaments WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
