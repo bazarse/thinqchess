@@ -905,7 +905,7 @@ const Tournaments = () => {
 
 
 
-              {/* Tournament Category Selection */}
+              {/* Tournament Category Selection - MOVED ABOVE DOB FOR BETTER UX */}
               <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
                 <h2 className="text-[18px]">Tournament Category:</h2>
                 <div className="md:w-[300px] w-full">
