@@ -452,47 +452,105 @@ const Tournaments = () => {
     setErrorMessage("");
     setSuccesMessage("");
 
-    // Demo payment - skip Razorpay loading
-
+    // Razorpay payment integration
     try {
-      setSuccesMessage("Processing payment...");
+      setSuccesMessage("Initializing payment...");
 
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Load Razorpay script
+      const razorpayLoaded = await loadRazorpayScript();
+      if (!razorpayLoaded) {
+        setErrorMessage("Failed to load payment gateway. Please try again.");
+        return;
+      }
 
-      // Generate demo payment ID
-      const demoPaymentId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Save registration data directly with completed payment status
-      const registrationResponse = await fetch("/api/tournament/register", {
+      // Create order on backend
+      const orderResponse = await fetch("/api/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
-          tournament_id: activeTournament?.id || null,
-          tournament_type: selectedTournamentType,
-          amount_paid: finalAmount,
-          discount_code: discountCode,
-          discount_amount: discountData ? (tournamentFee - finalAmount) : 0,
-          payment_id: demoPaymentId,
-          payment_status: 'completed' // Mark as completed
+          amount: finalAmount * 100, // Convert to paise
+          currency: "INR",
+          receipt: `tournament_${Date.now()}`,
+          notes: {
+            tournament_id: activeTournament?.id || null,
+            participant_name: `${formData.particpantFirstName} ${formData.particpantLastName}`,
+            email: formData.mail_id,
+            phone: formData.phone_no
+          }
         }),
       });
 
-      const registrationData = await registrationResponse.json();
-
-      if (registrationData.success) {
-        console.log("Registration saved successfully:", registrationData.registration);
-        setSuccesMessage("Payment successful and registration completed!");
-        setPaymentSuccess(true);
-        setRegistrationData({
-          ...registrationData.registration,
-          payment_id: demoPaymentId
-        });
-      } else {
-        console.error("Registration save failed:", registrationData.error);
-        setErrorMessage("Registration failed. Please try again.");
+      const orderData = await orderResponse.json();
+      if (!orderData.success) {
+        setErrorMessage("Failed to create payment order. Please try again.");
+        return;
       }
+
+      setSuccesMessage("Opening payment gateway...");
+
+      // Configure Razorpay options
+      const options = {
+        key: "rzp_live_z71oXRZ0avccLv", // Live key
+        amount: finalAmount * 100, // Amount in paise
+        currency: "INR",
+        name: "ThinQ Chess Academy",
+        description: `Tournament Registration - ${activeTournament?.name || 'Chess Tournament'}`,
+        order_id: orderData.order.id,
+        handler: async function (response) {
+          console.log("Payment successful:", response);
+
+          // Save registration data with payment details
+          const registrationResponse = await fetch("/api/tournament/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...formData,
+              tournament_id: activeTournament?.id || null,
+              tournament_type: selectedTournamentType,
+              amount_paid: finalAmount,
+              discount_code: discountCode,
+              discount_amount: discountData ? (tournamentFee - finalAmount) : 0,
+              payment_id: response.razorpay_payment_id,
+              order_id: response.razorpay_order_id,
+              signature: response.razorpay_signature,
+              payment_status: 'completed'
+            }),
+          });
+
+          const registrationData = await registrationResponse.json();
+
+          if (registrationData.success) {
+            console.log("Registration saved successfully:", registrationData.registration);
+            setSuccesMessage("Payment successful and registration completed!");
+            setPaymentSuccess(true);
+            setRegistrationData({
+              ...registrationData.registration,
+              payment_id: response.razorpay_payment_id
+            });
+          } else {
+            console.error("Registration save failed:", registrationData.error);
+            setErrorMessage("Payment successful but registration failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: `${formData.particpantFirstName} ${formData.particpantLastName}`,
+          email: formData.mail_id,
+          contact: formData.phone_no
+        },
+        theme: {
+          color: "#2B3AA0"
+        },
+        modal: {
+          ondismiss: function() {
+            setErrorMessage("Payment cancelled. Please try again.");
+            setIsSubmitting(false);
+          }
+        }
+      };
+
+      // Open Razorpay checkout
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
 
 
 

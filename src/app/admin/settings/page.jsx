@@ -18,12 +18,11 @@ const AdminSettings = () => {
   });
 
   const [paymentSettings, setPaymentSettings] = useState({
-    payment_mode: 'demo', // 'demo' or 'razorpay'
-    razorpay_key_id: '',
-    razorpay_key_secret: '',
+    payment_mode: 'razorpay', // Only razorpay mode
+    razorpay_key_id: 'rzp_live_z71oXRZ0avccLv',
+    razorpay_key_secret: 'uNuvlB1ovlLeGTUmyBQi6qPU',
     razorpay_webhook_secret: '',
-    demo_payment_enabled: true,
-    test_mode: true
+    test_mode: false // Live mode by default
   });
 
   const [googleSettings, setGoogleSettings] = useState({
@@ -362,43 +361,19 @@ const AdminSettings = () => {
         <h2 className="text-xl font-semibold text-gray-900 mb-6">💳 Payment Integration Settings</h2>
 
         <form onSubmit={handlePaymentSubmit} className="space-y-6">
-          {/* Payment Mode Selection */}
+          {/* Razorpay Payment Configuration */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-4">Payment Mode</label>
-            <div className="space-y-3">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="payment_mode"
-                  value="demo"
-                  checked={paymentSettings.payment_mode === 'demo'}
-                  onChange={handlePaymentChange}
-                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 focus:ring-[#2B3AA0]"
-                />
-                <span className="ml-3 text-sm">
-                  <span className="font-medium text-green-600">🎯 Demo Payment</span>
-                  <span className="block text-gray-500">For testing - no real payments processed</span>
-                </span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="payment_mode"
-                  value="razorpay"
-                  checked={paymentSettings.payment_mode === 'razorpay'}
-                  onChange={handlePaymentChange}
-                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 focus:ring-[#2B3AA0]"
-                />
-                <span className="ml-3 text-sm">
-                  <span className="font-medium text-blue-600">💰 Razorpay Integration</span>
-                  <span className="block text-gray-500">Live payment processing with Razorpay</span>
-                </span>
-              </label>
+            <label className="block text-sm font-medium text-gray-700 mb-4">Razorpay Payment Configuration</label>
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>Live Payment Mode:</strong> All payments will be processed through Razorpay.
+                Make sure to configure your Razorpay credentials below.
+              </p>
             </div>
           </div>
 
-          {/* Razorpay Settings - Only show when Razorpay is selected */}
-          {paymentSettings.payment_mode === 'razorpay' && (
+          {/* Razorpay Settings - Always show since it's the only payment mode */}
+          {(
             <div className="bg-blue-50 p-6 rounded-lg space-y-4">
               <h3 className="text-lg font-medium text-blue-900">Razorpay Configuration</h3>
 
@@ -485,32 +460,7 @@ const AdminSettings = () => {
             </div>
           )}
 
-          {/* Demo Payment Settings */}
-          {paymentSettings.payment_mode === 'demo' && (
-            <div className="bg-green-50 p-6 rounded-lg">
-              <h3 className="text-lg font-medium text-green-900 mb-3">Demo Payment Configuration</h3>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="demo_payment_enabled"
-                  name="demo_payment_enabled"
-                  checked={paymentSettings.demo_payment_enabled}
-                  onChange={handlePaymentChange}
-                  className="w-4 h-4 text-[#2B3AA0] border-gray-300 rounded focus:ring-[#2B3AA0]"
-                />
-                <label htmlFor="demo_payment_enabled" className="ml-3 text-sm">
-                  <span className="font-medium">Enable Demo Payments</span>
-                  <span className="block text-gray-600">Allow users to complete registrations without real payment</span>
-                </label>
-              </div>
-              <div className="mt-4 p-3 bg-green-100 rounded border border-green-200">
-                <p className="text-sm text-green-800">
-                  <strong>Demo Mode:</strong> All payments will be simulated. Users can complete registrations
-                  without entering real payment details. Perfect for testing and development.
-                </p>
-              </div>
-            </div>
-          )}
+
 
           {/* Messages */}
           {message && (
