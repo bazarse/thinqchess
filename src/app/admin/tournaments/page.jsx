@@ -376,16 +376,31 @@ const TournamentManagement = () => {
     }
 
     try {
+      console.log('🔄 Toggling tournament:', {
+        id: tournament.id,
+        name: tournament.name,
+        current_is_active: tournament.is_active,
+        new_is_active: tournament.is_active ? 0 : 1
+      });
+
+      const requestBody = {
+        status: tournament.status || 'upcoming',
+        is_active: tournament.is_active ? 0 : 1  // Fixed: toggle logic was inverted
+      };
+
+      console.log('📤 Sending request to:', `/api/admin/tournaments/${tournament.id}`);
+      console.log('📤 Request body:', requestBody);
+
       const response = await fetch(`/api/admin/tournaments/${tournament.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: tournament.status || 'upcoming',
-          is_active: tournament.is_active ? 0 : 1  // Fixed: toggle logic was inverted
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('📥 Response status:', response.status);
       const data = await response.json();
+      console.log('📥 Response data:', data);
+
       if (data.success) {
         // Refresh tournaments to get updated active states
         fetchTournaments();

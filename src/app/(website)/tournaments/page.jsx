@@ -905,6 +905,31 @@ const Tournaments = () => {
 
 
 
+              {/* Tournament Category Selection */}
+              <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
+                <h2 className="text-[18px]">Tournament Category:</h2>
+                <div className="md:w-[300px] w-full">
+                  <select
+                    name="tournament_type"
+                    value={selectedTournamentType}
+                    onChange={handleTournamentTypeChange}
+                    required
+                    className="w-full p-2 border border-[#d3d1d1] rounded focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+                  >
+                    <option value="">Select Tournament Category</option>
+                    {tournamentTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name} - ₹{type.fee}
+                        {type.min_age || type.max_age ?
+                          ` (Age: ${type.min_age || 'Any'}-${type.max_age || 'Any'})` :
+                          ' (Open to all ages)'
+                        }
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* Date of Birth */}
               <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
                 <h2 className="text-[18px]">Date of Birth:</h2>
@@ -1053,30 +1078,7 @@ const Tournaments = () => {
                 </div>
               </div>
 
-              {/* Tournament Category Selection */}
-              <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
-                <h2 className="text-[18px]">Tournament Category:</h2>
-                <div className="md:w-[300px] w-full">
-                  <select
-                    name="tournament_type"
-                    value={selectedTournamentType}
-                    onChange={handleTournamentTypeChange}
-                    required
-                    className="w-full p-2 border border-[#d3d1d1] rounded focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                  >
-                    <option value="">Select Tournament Category</option>
-                    {tournamentTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name} - ₹{type.fee}
-                        {type.min_age || type.max_age ?
-                          ` (Age: ${type.min_age || 'Any'}-${type.max_age || 'Any'})` :
-                          ''
-                        }
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+
 
               {/* Discount Code Section */}
               <div className="mt-6">
