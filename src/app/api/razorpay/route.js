@@ -12,7 +12,11 @@ export async function POST(request) {
       );
     }
 
-    console.log('💳 Creating Live Razorpay Order:', { amount, currency });
+    console.log('💳 Creating Live Razorpay Order:', {
+      amount_received: amount,
+      amount_in_paise: amount * 100,
+      currency
+    });
 
     // Live Razorpay integration with hardcoded credentials
     try {
@@ -23,17 +27,29 @@ export async function POST(request) {
         key_secret: 'uNuvlB1ovlLeGTUmyBQi6qPU',
       });
 
+      const amountInPaise = Math.round(amount * 100); // Ensure integer paise
+
       const options = {
-        amount: amount * 100, // Amount in paise
+        amount: amountInPaise, // Amount in paise
         currency: currency,
         receipt: `receipt_${Date.now()}`,
         notes: {
           purpose: 'Tournament Registration',
-          academy: 'ThinQ Chess Academy'
+          academy: 'ThinQ Chess Academy',
+          amount_rupees: amount.toString()
         }
       };
 
+      console.log('🔧 Razorpay order options:', options);
+
       const order = await razorpay.orders.create(options);
+
+      console.log('✅ Razorpay order created:', {
+        order_id: order.id,
+        amount_paise: order.amount,
+        amount_rupees: order.amount / 100,
+        currency: order.currency
+      });
 
       return NextResponse.json({
         success: true,

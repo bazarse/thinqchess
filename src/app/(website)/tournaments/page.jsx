@@ -468,7 +468,7 @@ const Tournaments = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: finalAmount * 100, // Convert to paise
+          amount: finalAmount, // Send amount in rupees, backend will convert to paise
           currency: "INR",
           receipt: `tournament_${Date.now()}`,
           notes: {
@@ -491,7 +491,7 @@ const Tournaments = () => {
       // Configure Razorpay options
       const options = {
         key: "rzp_live_z71oXRZ0avccLv", // Live key
-        amount: finalAmount * 100, // Amount in paise
+        amount: orderData.order.amount, // Use amount from order (already in paise)
         currency: "INR",
         name: "ThinQ Chess Academy",
         description: `Tournament Registration - ${activeTournament?.name || 'Chess Tournament'}`,
