@@ -27,13 +27,23 @@ const PastTournaments = () => {
 
   const fetchPastTournaments = async () => {
     try {
+      setLoading(true);
+      setMessage('');
+
       // First update tournament status to move expired tournaments to past
+      console.log('🔄 Updating tournament status...');
       await updateTournamentStatus();
 
       const response = await fetch('/api/admin/past-tournaments');
       if (response.ok) {
         const data = await response.json();
         setPastTournaments(data.tournaments || []);
+
+        if (data.tournaments && data.tournaments.length > 0) {
+          setMessage(`✅ Found ${data.tournaments.length} completed tournaments`);
+        } else {
+          setMessage('ℹ️ No completed tournaments found. Tournaments are automatically moved here when their end date passes.');
+        }
       } else {
         setMessage('Error loading past tournaments');
       }
@@ -91,8 +101,28 @@ const PastTournaments = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Past Tournaments</h1>
-        <p className="text-gray-600">View completed tournaments and their registrations</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Past Tournaments</h1>
+            <p className="text-gray-600">View completed tournaments and their registrations</p>
+          </div>
+          <button
+            onClick={fetchPastTournaments}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Updating...
+              </>
+            ) : (
+              <>
+                🔄 Refresh & Update Status
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Success/Error Message */}
