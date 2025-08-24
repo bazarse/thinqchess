@@ -38,7 +38,7 @@ import RouterOptimizer from "@/components/RouterOptimizer";
 export const metadata = {
   title: "ThinQ Chess",
   description: "ThinQ Chess Academy - Learn Chess from Expert Coaches",
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL('https://www.thinqchess.com'),
   alternates: {
     canonical: '/',
   },
@@ -55,11 +55,11 @@ export const metadata = {
   openGraph: {
     title: "ThinQ Chess Academy",
     description: "Learn Chess from Expert Coaches",
-    url: "https://thinqchess.com",
+    url: "https://www.thinqchess.com",
     siteName: "ThinQ Chess Academy",
     images: [
       {
-        url: "/images/logo.png",
+        url: "/queen-favicon.svg",
         width: 1200,
         height: 630,
         alt: "ThinQ Chess Academy",

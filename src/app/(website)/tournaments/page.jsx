@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Head from "next/head";
 import emailjs from "@emailjs/browser";
 import PhoneInput from "react-phone-input-2";
 import Select from "react-select";
@@ -70,6 +71,13 @@ const Tournaments = () => {
   // Fetch tournament settings and page status on component mount
   useEffect(() => {
     loadActiveTournament();
+
+    // Refresh tournament data every 30 seconds to catch admin updates
+    const interval = setInterval(() => {
+      loadActiveTournament();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadActiveTournament = async () => {
@@ -545,6 +553,42 @@ const Tournaments = () => {
             setErrorMessage("Payment cancelled. Please try again.");
             setIsSubmitting(false);
           }
+        },
+        // Enhanced payment failure handler
+        "payment.failed": function (response) {
+          console.error("Payment failed:", response);
+          let errorMessage = "Payment failed. Please try again.";
+
+          if (response.error) {
+            switch (response.error.code) {
+              case 'BAD_REQUEST_ERROR':
+                errorMessage = "Invalid payment details. Please check and try again.";
+                break;
+              case 'GATEWAY_ERROR':
+                errorMessage = "Payment gateway error. Please try again.";
+                break;
+              case 'NETWORK_ERROR':
+                errorMessage = "Network error. Please check your connection and try again.";
+                break;
+              case 'SERVER_ERROR':
+                errorMessage = "Server error. Please try again later.";
+                break;
+              case 'INVALID_REQUEST_ERROR':
+                if (response.error.description && response.error.description.includes('PIN')) {
+                  errorMessage = "Invalid PIN entered. Please try again.";
+                } else if (response.error.description && response.error.description.includes('OTP')) {
+                  errorMessage = "Invalid OTP entered. Please try again.";
+                } else {
+                  errorMessage = "Invalid payment request. Please try again.";
+                }
+                break;
+              default:
+                errorMessage = `Payment failed: ${response.error.description || 'Unknown error'}`;
+            }
+          }
+
+          setErrorMessage(errorMessage);
+          setIsSubmitting(false);
         }
       };
 
@@ -694,6 +738,20 @@ const Tournaments = () => {
 
   return (
     <>
+      <Head>
+        <title>Chess Tournament Registration | ThinQ Chess Academy</title>
+        <meta name="description" content="Register for exciting chess tournaments at ThinQ Chess Academy. Multiple age categories available - Under 8, Under 10, Under 12, Under 16, and Open tournaments." />
+        <meta property="og:title" content="Chess Tournament Registration | ThinQ Chess Academy" />
+        <meta property="og:description" content="Register for exciting chess tournaments at ThinQ Chess Academy. Multiple age categories available." />
+        <meta property="og:image" content="https://www.thinqchess.com/favicon.ico" />
+        <meta property="og:url" content="https://www.thinqchess.com/tournaments" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Chess Tournament Registration | ThinQ Chess Academy" />
+        <meta name="twitter:description" content="Register for exciting chess tournaments at ThinQ Chess Academy." />
+        <meta name="twitter:image" content="https://www.thinqchess.com/favicon.ico" />
+        <link rel="canonical" href="https://www.thinqchess.com/tournaments" />
+      </Head>
       <Banner
         heading={"Where young minds test their mettle"}
         image={"/images/about-banner.jpg"}
