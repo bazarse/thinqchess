@@ -57,6 +57,18 @@ export async function GET(request) {
     // Execute query
     const registrations = db.prepare(query).all(...params);
 
+    console.log('📊 REGISTRATIONS EXPORT DEBUG:', {
+      total_registrations: registrations.length,
+      format: format,
+      filter: filter,
+      sample_registration: registrations[0] ? {
+        id: registrations[0].id,
+        phone: registrations[0].phone,
+        tournament_type: registrations[0].tournament_type,
+        type: registrations[0].type
+      } : 'No registrations'
+    });
+
     if (format === 'csv') {
       // Generate CSV with comprehensive headers
       const csvHeaders = [

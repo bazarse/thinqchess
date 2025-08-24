@@ -31,21 +31,34 @@ export async function GET(request) {
       return NextResponse.json({ error: 'No registrations found for this tournament' }, { status: 404 });
     }
 
+    console.log('📊 EXCEL EXPORT DEBUG:', {
+      total_registrations: registrations.length,
+      sample_registration: registrations[0] ? {
+        id: registrations[0].id,
+        phone: registrations[0].phone,
+        tournament_type: registrations[0].tournament_type,
+        created_at: registrations[0].created_at,
+        registered_at: registrations[0].registered_at
+      } : 'No registrations'
+    });
+
     // Prepare data for Excel
     const excelData = registrations.map((reg, index) => ({
       'S.No': index + 1,
-      'Registration Date': reg.id ? 'N/A' : 'N/A', // No timestamp column available
-      'Participant Name': `${reg.participant_first_name || ''} ${reg.participant_last_name || ''}`.trim(),
+      'Registration Date': reg.created_at ? new Date(reg.created_at).toLocaleDateString('en-GB') :
+                          (reg.registered_at ? new Date(reg.registered_at).toLocaleDateString('en-GB') : 'N/A'),
+      'Participant Name': `${reg.participant_first_name || ''} ${reg.participant_middle_name ? reg.participant_middle_name + ' ' : ''}${reg.participant_last_name || ''}`.trim(),
       'Email': reg.email || 'N/A',
       'Phone': reg.phone || 'N/A',
-      'Date of Birth': reg.dob ? new Date(reg.dob).toLocaleDateString() : 'N/A',
+      'Date of Birth': reg.dob ? new Date(reg.dob).toLocaleDateString('en-GB') : 'N/A',
+      'Age': reg.age || 'N/A',
       'Gender': reg.gender || 'N/A',
-      'FIDA ID': reg.fida_id || 'N/A',
+      'FIDE ID': reg.fide_id || 'N/A',
       'Tournament Category': reg.tournament_type || 'N/A',
       'Country': reg.country || 'N/A',
       'State': reg.state || 'N/A',
       'City': reg.city || 'N/A',
-      'Location': reg.location || 'N/A',
+      'Address': reg.address || reg.location || 'N/A',
       'Amount Paid': `₹${reg.amount_paid || 0}`,
       'Discount Code': reg.discount_code || 'N/A',
       'Discount Amount': reg.discount_amount ? `₹${reg.discount_amount}` : '₹0',
@@ -62,20 +75,22 @@ export async function GET(request) {
     const columnWidths = [
       { wch: 8 },   // S.No
       { wch: 15 },  // Registration Date
-      { wch: 20 },  // Participant Name
-      { wch: 25 },  // Email
+      { wch: 25 },  // Participant Name (increased for middle name)
+      { wch: 30 },  // Email (increased)
       { wch: 15 },  // Phone
       { wch: 12 },  // Date of Birth
+      { wch: 8 },   // Age
       { wch: 10 },  // Gender
-      { wch: 12 },  // FIDA ID
+      { wch: 12 },  // FIDE ID
+      { wch: 18 },  // Tournament Category (increased)
       { wch: 15 },  // Country
       { wch: 15 },  // State
       { wch: 15 },  // City
-      { wch: 20 },  // Location
+      { wch: 25 },  // Address (increased)
       { wch: 12 },  // Amount Paid
       { wch: 15 },  // Discount Code
       { wch: 15 },  // Discount Amount
-      { wch: 20 },  // Payment ID
+      { wch: 25 },  // Payment ID (increased)
       { wch: 15 },  // Payment Status
       { wch: 25 }   // Tournament
     ];
