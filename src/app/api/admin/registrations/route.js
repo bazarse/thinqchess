@@ -25,6 +25,17 @@ export async function GET(request) {
     whereConditions.push('payment_status = ?');
     params.push('completed');
 
+    console.log('🔍 ADMIN REGISTRATIONS QUERY:', {
+      filter,
+      ageFilter,
+      search,
+      tournamentId,
+      page,
+      limit,
+      whereConditions,
+      params
+    });
+
     // Filter by type
     if (filter !== 'all') {
       whereConditions.push('type = ?');
@@ -87,6 +98,18 @@ export async function GET(request) {
 
     const registrations = await db.prepare(query).all(...params);
     console.log('🔍 Main Query Results:', registrations.length, 'records found');
+
+    // Log recent registrations for debugging
+    if (registrations.length > 0) {
+      console.log('📊 RECENT REGISTRATIONS:', registrations.slice(0, 3).map(r => ({
+        id: r.id,
+        name: `${r.participant_first_name} ${r.participant_last_name}`,
+        email: r.email,
+        payment_status: r.payment_status,
+        payment_id: r.payment_id,
+        created_at: r.created_at
+      })));
+    }
 
     // Get total count and revenue for pagination and stats (only completed payments)
     let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations WHERE payment_status = ?';

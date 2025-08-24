@@ -4,6 +4,16 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
+    console.log('🎯 REGISTRATION API CALLED:', {
+      timestamp: new Date().toISOString(),
+      participant: `${body.particpantFirstName} ${body.particpantLastName}`,
+      email: body.mail_id,
+      payment_id: body.payment_id,
+      payment_status: body.payment_status,
+      tournament_id: body.tournament_id,
+      tournament_type: body.tournament_type
+    });
+
     // Save tournament registration to SQLite
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
@@ -67,12 +77,22 @@ export async function POST(request) {
       parseFloat(body.discount_amount) || 0,
       body.payment_id || null,
       body.razorpay_order_id || null,
-      body.payment_status || 'pending',
+      body.payment_status || 'completed', // Default to completed for successful registrations
       'tournament'
     );
 
     // Get the created registration
     const savedRegistration = db.prepare('SELECT * FROM tournament_registrations WHERE id = ?').get(result.lastInsertRowid);
+
+    console.log('✅ REGISTRATION SAVED TO DATABASE:', {
+      registration_id: savedRegistration.id,
+      participant_name: `${savedRegistration.participant_first_name} ${savedRegistration.participant_last_name}`,
+      email: savedRegistration.email,
+      payment_status: savedRegistration.payment_status,
+      payment_id: savedRegistration.payment_id,
+      tournament_id: savedRegistration.tournament_id,
+      created_at: savedRegistration.created_at
+    });
 
     // Update discount code usage if used
     if (body.discount_code) {
