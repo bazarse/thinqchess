@@ -2,87 +2,60 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    console.log('🖼️ Gallery upload API called');
-
     const body = await request.json();
-    const { image_name, image_url } = body;
+    const { image_url, image_name, display_order, category } = body;
 
-    console.log('📝 Upload data:', { image_name, image_url });
-
-    if (!image_name || !image_url) {
-      console.error('❌ Missing required fields');
+    if (!image_url || !image_name) {
       return NextResponse.json(
-        { error: 'Image name and URL are required' },
+        { error: 'Image URL and name are required' },
         { status: 400 }
       );
     }
 
-    try {
-      // Save to SimpleDB database
-      const SimpleDatabase = (await import('../../../../../../lib/simple-db.js')).default;
-      const db = new SimpleDatabase();
+    const { getDB } = require('../../../../../../lib/database.js');
+    const db = getDB();
 
-      console.log('💾 Attempting to save to database...');
+    // Create table if it doesn't exist
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS gallery_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        image_name TEXT,
+        image_url TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
+        category TEXT DEFAULT 'uncategorized',
+        type TEXT DEFAULT 'image',
+        youtube_id TEXT,
+        youtube_url TEXT,
+        title TEXT,
+        uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
 
-      // Insert into gallery_images table
-      const result = await db.run(`
-        INSERT INTO gallery_images (image_name, image_url, display_order, uploaded_at, created_at)
-        VALUES (?, ?, ?, ?, ?)
-      `, [
-        image_name,
-        image_url,
-        0, // Default display order
-        new Date().toISOString(),
-        new Date().toISOString()
-      ]);
+    const result = db.prepare(`
+      INSERT INTO gallery_images (image_name, image_url, display_order, category, type, uploaded_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      image_name,
+      image_url,
+      display_order || 0,
+      category || 'uncategorized',
+      'image',
+      new Date().toISOString()
+    );
 
-      console.log('✅ Database insert result:', result);
+    const newImage = db.prepare('SELECT * FROM gallery_images WHERE id = ?').get(result.lastInsertRowid);
 
-      // Create response with the uploaded image data
-      const newImage = {
-        id: result?.lastInsertRowid || Date.now(),
-        image_name,
-        image_url,
-        display_order: 0,
-        uploaded_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-
-      console.log('🎉 Gallery image saved successfully:', newImage);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Image uploaded successfully!',
-        image: newImage
-      });
-
-    } catch (dbError) {
-      console.error('💥 Database error:', dbError);
-
-      // Return success anyway with mock data
-      const mockImage = {
-        id: Date.now(),
-        image_name,
-        image_url,
-        display_order: 0,
-        uploaded_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      };
-
-      return NextResponse.json({
-        success: true,
-        message: 'Image uploaded successfully (mock)!',
-        image: mockImage
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Image uploaded successfully',
+      image: newImage
+    });
 
   } catch (error) {
-    console.error('🚨 Gallery upload error:', error);
+    console.error('Error uploading image:', error);
     return NextResponse.json(
-      {
-        error: 'Failed to save gallery image',
-        details: error.message
-      },
+      { error: 'Failed to upload image' },
       { status: 500 }
     );
   }

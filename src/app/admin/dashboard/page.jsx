@@ -113,7 +113,10 @@ const AdminDashboard = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">₹{stats.totalRevenue}</p>
+              <p className="text-2xl font-bold text-gray-900">₹{stats.totalRevenue?.toLocaleString() || 0}</p>
+              {stats.completedRevenue !== undefined && (
+                <p className="text-xs text-gray-500">Completed: ₹{stats.completedRevenue?.toLocaleString() || 0}</p>
+              )}
             </div>
           </div>
         </div>

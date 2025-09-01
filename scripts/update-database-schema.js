@@ -149,6 +149,67 @@ async function updateDatabaseSchema() {
       console.error('❌ Error creating tournaments table:', e.message);
     }
     
+    // Create gallery_images table if it doesn't exist
+    try {
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS gallery_images (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          image_name TEXT,
+          image_url TEXT NOT NULL,
+          display_order INTEGER DEFAULT 0,
+          category TEXT DEFAULT 'uncategorized',
+          type TEXT DEFAULT 'image',
+          youtube_id TEXT,
+          youtube_url TEXT,
+          title TEXT,
+          uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      console.log('✅ Created gallery_images table');
+    } catch (e) {
+      console.error('❌ Error creating gallery_images table:', e.message);
+    }
+    
+    // Create blogs table if it doesn't exist
+    try {
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS blogs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          slug TEXT UNIQUE,
+          content TEXT,
+          featured_image TEXT,
+          status TEXT DEFAULT 'draft',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      console.log('✅ Created blogs table');
+    } catch (e) {
+      console.error('❌ Error creating blogs table:', e.message);
+    }
+    
+    // Create demo_requests table if it doesn't exist
+    try {
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS demo_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          parent_name TEXT,
+          child_name TEXT,
+          email TEXT,
+          phone TEXT,
+          age INTEGER,
+          message TEXT,
+          status TEXT DEFAULT 'pending',
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      console.log('✅ Created demo_requests table');
+    } catch (e) {
+      console.error('❌ Error creating demo_requests table:', e.message);
+    }
+    
     console.log('🎉 Database schema update completed successfully!');
     
   } catch (error) {

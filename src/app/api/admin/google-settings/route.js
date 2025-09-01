@@ -9,7 +9,7 @@ export async function GET() {
     const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
     
     let googleSettings = {
-      places_api_key: '',
+      places_api_key: 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w',
       place_id_jp_nagar: 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
       place_id_akshayanagar: '',
       reviews_enabled: true
@@ -48,7 +48,7 @@ export async function POST(request) {
     const db = getDB();
 
     const googleSettings = {
-      places_api_key: places_api_key || '',
+      places_api_key: places_api_key || 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w',
       place_id_jp_nagar: place_id_jp_nagar || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
       place_id_akshayanagar: place_id_akshayanagar || '',
       reviews_enabled: reviews_enabled !== undefined ? reviews_enabled : true

@@ -10,6 +10,24 @@ async function handleGalleryRequest() {
       // Try to use SimpleDB
       const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
       const db = new SimpleDatabase();
+      
+      // Create table if it doesn't exist
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS gallery_images (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          image_name TEXT,
+          image_url TEXT NOT NULL,
+          display_order INTEGER DEFAULT 0,
+          category TEXT DEFAULT 'uncategorized',
+          type TEXT DEFAULT 'image',
+          youtube_id TEXT,
+          youtube_url TEXT,
+          title TEXT,
+          uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+      `).run();
+      
       images = await db.all('SELECT * FROM gallery_images ORDER BY display_order ASC, uploaded_at DESC') || [];
       console.log(`📸 Found ${images.length} gallery images from database`);
     } catch (dbError) {

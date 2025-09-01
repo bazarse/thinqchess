@@ -27,14 +27,14 @@ export async function GET(request) {
     }
 
     if (!googleApiKey) {
-      console.log('🔄 No Google API key found, returning empty reviews');
+      console.log('🔄 No Google API key found, using sample reviews');
       return NextResponse.json({
         success: true,
-        source: 'no_api_key',
-        reviews: [],
-        rating: 0,
-        total_reviews: 0,
-        message: 'Google API key not configured'
+        source: 'sample',
+        reviews: getSampleReviews(),
+        rating: 4.8,
+        total_reviews: 25,
+        message: 'Configure Google API key in admin settings for live reviews'
       });
     }
 

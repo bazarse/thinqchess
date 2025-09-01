@@ -36,8 +36,11 @@ export async function GET() {
       LIMIT 5
     `, ['pending']) || [];
 
-    // Calculate revenue (completed payments)
-    const totalRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { total: 0 };
+    // Calculate revenue (all payments - both completed and pending)
+    const totalRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE amount_paid > 0') || { total: 0 };
+    
+    // Also get completed revenue separately for comparison
+    const completedRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { total: 0 };
 
     // Get completed registrations count
     const completedRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { count: 0 };
@@ -59,6 +62,7 @@ export async function GET() {
         totalDiscountCodes: totalDiscountCodes.count || 0,
         activeDiscountCodes: activeDiscountCodes.count || 0,
         totalRevenue: totalRevenue.total || 0,
+        completedRevenue: completedRevenue.total || 0,
         pendingDemos: pendingDemos.count || 0,
         registrationsByType: registrationsByType || []
       },
