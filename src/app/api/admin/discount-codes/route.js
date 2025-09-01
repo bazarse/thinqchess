@@ -26,19 +26,26 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { code, discount_percent, usage_limit, is_active, code_type, prefix, email_domain, email_prefix, match_type } = body;
+    const { code, discount_percent, discount_amount, discount_type, usage_limit, is_active, code_type, prefix, email_domain, email_prefix, match_type } = body;
 
     // Validate required fields
-    if (!code || !discount_percent) {
+    if (!code || (!discount_percent && !discount_amount)) {
       return NextResponse.json(
-        { error: 'Code and discount percentage are required' },
+        { error: 'Code and discount value are required' },
         { status: 400 }
       );
     }
 
-    if (discount_percent < 0 || discount_percent > 100) {
+    if (discount_type === 'percentage' && (discount_percent < 0 || discount_percent > 100)) {
       return NextResponse.json(
         { error: 'Discount percentage must be between 0 and 100' },
+        { status: 400 }
+      );
+    }
+
+    if (discount_type === 'amount' && discount_amount < 0) {
+      return NextResponse.json(
+        { error: 'Discount amount must be positive' },
         { status: 400 }
       );
     }
@@ -58,13 +65,15 @@ export async function POST(request) {
     // Insert new discount code
     const insertStmt = db.prepare(`
       INSERT INTO discount_codes (
-        code, discount_percent, usage_limit, is_active, code_type, prefix, email_domain, email_prefix, match_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        code, discount_percent, discount_amount, discount_type, usage_limit, is_active, code_type, prefix, email_domain, email_prefix, match_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertStmt.run(
       code.toUpperCase(),
-      parseFloat(discount_percent),
+      discount_type === 'percentage' ? parseFloat(discount_percent) : 0,
+      discount_type === 'amount' ? parseFloat(discount_amount) : 0,
+      discount_type || 'percentage',
       parseInt(usage_limit) || 100,
       is_active ? 1 : 0,
       code_type || 'manual',
@@ -131,7 +140,7 @@ export async function PUT(request) {
     // Update discount code
     const updateStmt = db.prepare(`
       UPDATE discount_codes 
-      SET code = ?, discount_percent = ?, usage_limit = ?, is_active = ?, 
+      SET code = ?, discount_percent = ?, discount_amount = ?, discount_type = ?, usage_limit = ?, is_active = ?, 
           code_type = ?, prefix = ?, email_domain = ?
       WHERE id = ?
     `);
@@ -139,6 +148,8 @@ export async function PUT(request) {
     updateStmt.run(
       code ? code.toUpperCase() : existing.code,
       discount_percent !== undefined ? parseFloat(discount_percent) : existing.discount_percent,
+      discount_amount !== undefined ? parseFloat(discount_amount) : existing.discount_amount,
+      discount_type || existing.discount_type || 'percentage',
       usage_limit !== undefined ? parseInt(usage_limit) : existing.usage_limit,
       is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
       code_type || existing.code_type,

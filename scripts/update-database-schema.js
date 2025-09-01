@@ -210,6 +210,36 @@ async function updateDatabaseSchema() {
       console.error('❌ Error creating demo_requests table:', e.message);
     }
     
+    // Add discount_amount column if it doesn't exist
+    try {
+      db.prepare(`
+        ALTER TABLE discount_codes 
+        ADD COLUMN discount_amount DECIMAL(10,2) DEFAULT 0
+      `).run();
+      console.log('✅ Added discount_amount column');
+    } catch (e) {
+      if (e.message.includes('duplicate column name')) {
+        console.log('ℹ️ discount_amount column already exists');
+      } else {
+        console.error('❌ Error adding discount_amount column:', e.message);
+      }
+    }
+    
+    // Add discount_type column if it doesn't exist
+    try {
+      db.prepare(`
+        ALTER TABLE discount_codes 
+        ADD COLUMN discount_type TEXT DEFAULT 'percentage'
+      `).run();
+      console.log('✅ Added discount_type column');
+    } catch (e) {
+      if (e.message.includes('duplicate column name')) {
+        console.log('ℹ️ discount_type column already exists');
+      } else {
+        console.error('❌ Error adding discount_type column:', e.message);
+      }
+    }
+    
     console.log('🎉 Database schema update completed successfully!');
     
   } catch (error) {
