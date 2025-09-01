@@ -150,7 +150,7 @@ const ContactUs = () => {
                 Bengaluru, Karnataka 560068
               </p>
               <a
-                href="https://www.google.com/maps/search/ThinQ+Chess+Akshayanagar+Karthikeya+Complex+Mahaveer+road+Akshayanagar+Gardens+West+Bengaluru+Karnataka+560068"
+                href="https://www.google.com/maps/place/ThinQ+Chess+-+Akshayanagar/@12.8750299,77.6134597,17z/data=!4m14!1m7!3m6!1s0x466bc668dec53c91:0x9d04e17d485fbb41!2sThinQ+Chess+-+Akshayanagar!8m2!3d12.8750299!4d77.6134597!16s%2Fg%2F11xk_41yxg!3m5!1s0x466bc668dec53c91:0x9d04e17d485fbb41!8m2!3d12.8750299!4d77.6134597!16s%2Fg%2F11xk_41yxg?entry=ttu&g_ep=EgoyMDI1MDgyNS4wIKXMDSoASAFQAw%3D%3D"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#2B3AA0] hover:text-[#1e2a70] underline text-sm"
@@ -225,7 +225,7 @@ const ContactUs = () => {
               <p className="text-orange-100">3rd Floor, Karthikeya Complex, Mahaveer Road, Akshayanagar Gardens, West, Akshayanagar, Bengaluru, Karnataka 560068</p>
             </div>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0!2d77.5945!3d12.9279!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTLCsDU1JzQwLjQiTiA3N8KwMzUnNDAuMiJF!5e0!3m2!1sen!2sin!4v1734567890124!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0736!2d77.6108847!3d12.8750299!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x466bc668dec53c91%3A0x9d04e17d485fbb41!2sThinQ%20Chess%20-%20Akshayanagar!5e0!3m2!1sen!2sin!4v1734567890124!5m2!1sen!2sin"
               className="w-full h-96 md:h-[500px]"
               style={{ border: 0 }}
               allowFullScreen=""
