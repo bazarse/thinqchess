@@ -307,7 +307,7 @@ export default function Home() {
 
         <GoogleReviews
           location={reviewLocation === 'jpnagar' ? 'JP Nagar' : 'Akshayanagar'}
-          placeId={reviewLocation === 'jpnagar' ? 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM' : 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM'}
+          placeId={reviewLocation === 'jpnagar' ? 'ChIJ-_jBcPtrrjsRvd658JobDpM' : 'ChIJkTzF3mjGa0YRQbtfSH3hBJ0'}
         />
       </section>
     </>

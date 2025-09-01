@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 
-const GoogleReviews = ({ location = "JP Nagar", placeId = "ChXdvpvpgI0jaOm_lM-Zf9XXYjM" }) => {
+const GoogleReviews = ({ location = "JP Nagar", placeId = "ChIJ-_jBcPtrrjsRvd658JobDpM" }) => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
