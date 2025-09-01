@@ -200,6 +200,12 @@ export async function PUT(request) {
       updated_at: new Date().toISOString()
     };
 
+    console.log('🔧 Tournament categories update:', {
+      existing_categories: existing.categories,
+      new_categories: categories,
+      final_categories: updateValues.categories
+    });
+
     console.log('🔧 Final update values:', updateValues);
 
     // Update tournament
@@ -225,12 +231,9 @@ export async function PUT(request) {
 
     console.log('✅ Tournament update result:', result);
 
+    // Don't fail if no changes - this can happen with identical data
     if (result.changes === 0) {
-      console.log('❌ No changes made to tournament');
-      return NextResponse.json(
-        { error: 'No changes were made to the tournament' },
-        { status: 400 }
-      );
+      console.log('⚠️ No changes detected, but returning success');
     }
 
     // Get updated tournament

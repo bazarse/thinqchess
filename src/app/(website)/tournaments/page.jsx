@@ -552,7 +552,9 @@ const Tournaments = () => {
           ondismiss: function() {
             setErrorMessage("Payment cancelled. Please try again.");
             setIsSubmitting(false);
-          }
+          },
+          escape: false,
+          backdrop: true
         },
         // Enhanced payment failure handler
         "payment.failed": function (response) {
@@ -562,7 +564,11 @@ const Tournaments = () => {
           if (response.error) {
             switch (response.error.code) {
               case 'BAD_REQUEST_ERROR':
-                errorMessage = "Invalid payment details. Please check and try again.";
+                if (response.error.description && response.error.description.toLowerCase().includes('pin')) {
+                  errorMessage = "Invalid PIN entered. Please check your PIN and try again.";
+                } else {
+                  errorMessage = "Invalid payment details. Please check and try again.";
+                }
                 break;
               case 'GATEWAY_ERROR':
                 errorMessage = "Payment gateway error. Please try again.";
@@ -574,16 +580,27 @@ const Tournaments = () => {
                 errorMessage = "Server error. Please try again later.";
                 break;
               case 'INVALID_REQUEST_ERROR':
-                if (response.error.description && response.error.description.includes('PIN')) {
-                  errorMessage = "Invalid PIN entered. Please try again.";
-                } else if (response.error.description && response.error.description.includes('OTP')) {
-                  errorMessage = "Invalid OTP entered. Please try again.";
+                if (response.error.description && response.error.description.toLowerCase().includes('pin')) {
+                  errorMessage = "Invalid PIN entered. Please check your PIN and try again.";
+                } else if (response.error.description && response.error.description.toLowerCase().includes('otp')) {
+                  errorMessage = "Invalid OTP entered. Please check your OTP and try again.";
+                } else if (response.error.description && response.error.description.toLowerCase().includes('cvv')) {
+                  errorMessage = "Invalid CVV entered. Please check your CVV and try again.";
+                } else if (response.error.description && response.error.description.toLowerCase().includes('card')) {
+                  errorMessage = "Invalid card details. Please check your card information and try again.";
                 } else {
                   errorMessage = "Invalid payment request. Please try again.";
                 }
                 break;
+              case 'AUTHENTICATION_ERROR':
+                errorMessage = "Authentication failed. Please verify your payment details and try again.";
+                break;
               default:
-                errorMessage = `Payment failed: ${response.error.description || 'Unknown error'}`;
+                if (response.error.description && response.error.description.toLowerCase().includes('pin')) {
+                  errorMessage = "Invalid PIN entered. Please check your PIN and try again.";
+                } else {
+                  errorMessage = `Payment failed: ${response.error.description || 'Unknown error'}`;
+                }
             }
           }
 
@@ -743,13 +760,13 @@ const Tournaments = () => {
         <meta name="description" content="Register for exciting chess tournaments at ThinQ Chess Academy. Multiple age categories available - Under 8, Under 10, Under 12, Under 16, and Open tournaments." />
         <meta property="og:title" content="Chess Tournament Registration | ThinQ Chess Academy" />
         <meta property="og:description" content="Register for exciting chess tournaments at ThinQ Chess Academy. Multiple age categories available." />
-        <meta property="og:image" content="https://www.thinqchess.com/favicon.ico" />
+        <meta property="og:image" content="https://www.thinqchess.com/images/chessqueen.png" />
         <meta property="og:url" content="https://www.thinqchess.com/tournaments" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Chess Tournament Registration | ThinQ Chess Academy" />
         <meta name="twitter:description" content="Register for exciting chess tournaments at ThinQ Chess Academy." />
-        <meta name="twitter:image" content="https://www.thinqchess.com/favicon.ico" />
+        <meta name="twitter:image" content="https://www.thinqchess.com/images/chessqueen.png" />
         <link rel="canonical" href="https://www.thinqchess.com/tournaments" />
       </Head>
       <Banner

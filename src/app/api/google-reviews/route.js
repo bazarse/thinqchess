@@ -8,12 +8,13 @@ export async function GET(request) {
     // Get Google API key from admin settings
     const { getDB } = require('../../../../lib/database.js');
     const db = getDB();
-    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
     
-    let googleApiKey = process.env.GOOGLE_PLACES_API_KEY;
+    let googleApiKey = 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w'; // Default API key
     
-    if (settings && settings.google_settings) {
-      try {
+    try {
+      const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+      
+      if (settings && settings.google_settings) {
         const googleSettings = typeof settings.google_settings === 'string' 
           ? JSON.parse(settings.google_settings) 
           : settings.google_settings;
@@ -21,20 +22,24 @@ export async function GET(request) {
         if (googleSettings.places_api_key) {
           googleApiKey = googleSettings.places_api_key;
         }
-      } catch (e) {
-        console.error('Error parsing Google settings:', e);
       }
+    } catch (e) {
+      console.error('Error fetching Google settings:', e);
+      // Use default API key
     }
+    
+    console.log('🔑 Using Google API key:', googleApiKey ? 'Found' : 'Not found');
 
-    if (!googleApiKey) {
-      console.log('🔄 No Google API key found, using sample reviews');
+    // Always use the API key (default or from settings)
+    if (!googleApiKey || googleApiKey.length < 10) {
+      console.log('❌ Invalid Google API key');
       return NextResponse.json({
-        success: true,
-        source: 'sample',
-        reviews: getSampleReviews(),
-        rating: 4.8,
-        total_reviews: 25,
-        message: 'Configure Google API key in admin settings for live reviews'
+        success: false,
+        source: 'invalid_api_key',
+        reviews: [],
+        rating: 0,
+        total_reviews: 0,
+        error: 'Invalid Google API key. Please check admin settings.'
       });
     }
 
@@ -96,47 +101,6 @@ export async function GET(request) {
   }
 }
 
-function getMockReviews() {
-  return [
-    {
-      id: 1,
-      author_name: "Priya Sharma",
-      rating: 5,
-      text: "Excellent chess coaching! My son has improved tremendously under Krishna sir's guidance. Highly recommended for serious chess learning.",
-      time: "2 weeks ago",
-      profile_photo_url: null
-    },
-    {
-      id: 2,
-      author_name: "Rajesh Kumar",
-      rating: 5,
-      text: "Best chess academy in Bangalore! Professional coaching with personalized attention. My daughter loves the classes.",
-      time: "1 month ago",
-      profile_photo_url: null
-    },
-    {
-      id: 3,
-      author_name: "Anita Reddy",
-      rating: 5,
-      text: "Amazing experience! The coaches are very knowledgeable and patient. Great environment for learning chess.",
-      time: "3 weeks ago",
-      profile_photo_url: null
-    },
-    {
-      id: 4,
-      author_name: "Suresh Babu",
-      rating: 5,
-      text: "Outstanding chess coaching center! My son has won several tournaments after joining ThinQ Chess. Thank you!",
-      time: "1 week ago",
-      profile_photo_url: null
-    },
-    {
-      id: 5,
-      author_name: "Meera Nair",
-      rating: 5,
-      text: "Highly professional and dedicated coaches. The systematic approach to teaching chess is commendable.",
-      time: "2 months ago",
-      profile_photo_url: null
-    }
-  ];
+function getSampleReviews() {
+  return [];
 }

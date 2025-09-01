@@ -14,6 +14,9 @@ export async function POST(request) {
       tournament_type: body.tournament_type
     });
 
+    // Immediate database save to reduce lag
+    const startTime = Date.now();
+
     // Save tournament registration to SQLite
     const { getDB } = require('../../../../../lib/database.js');
     const db = getDB();
@@ -128,14 +131,20 @@ export async function POST(request) {
       console.log('✅ Discount code usage updated');
     }
 
-    console.log('✅ Tournament Registration Saved:', savedRegistration);
+    const processingTime = Date.now() - startTime;
+    console.log('✅ Tournament Registration Saved:', {
+      ...savedRegistration,
+      processing_time_ms: processingTime
+    });
 
+    // Send immediate response to reduce perceived lag
     return NextResponse.json({
       success: true,
       message: 'Tournament registration completed successfully',
       registration: {
         ...savedRegistration,
-        participant_name: `${savedRegistration.participant_first_name} ${savedRegistration.participant_last_name}`
+        participant_name: `${savedRegistration.participant_first_name} ${savedRegistration.participant_last_name}`,
+        processing_time: processingTime
       }
     });
 

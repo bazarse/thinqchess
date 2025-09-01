@@ -338,7 +338,7 @@ const TournamentManagement = () => {
       ...registrations.map(reg => [
         `"${reg.participant_first_name} ${reg.participant_last_name}"`,
         `"${reg.email}"`,
-        `"${reg.phone}"`,
+        `"${reg.phone || ''}"`,
         `"${reg.dob || ''}"`,
         `"${reg.gender || ''}"`,
         `"${reg.category_name || reg.tournament_type || ''}"`,
@@ -917,8 +917,8 @@ const TournamentManagement = () => {
                           {reg.participant_first_name} {reg.participant_last_name}
                         </td>
                         <td className="px-4 py-2 border-b">{reg.email}</td>
-                        <td className="px-4 py-2 border-b">{reg.phone}</td>
-                        <td className="px-4 py-2 border-b">{reg.category_name || reg.tournament_type}</td>
+                        <td className="px-4 py-2 border-b">{reg.phone || 'N/A'}</td>
+                        <td className="px-4 py-2 border-b">{reg.category_name || reg.tournament_type || 'N/A'}</td>
                         <td className="px-4 py-2 border-b">₹{reg.amount_paid}</td>
                         <td className="px-4 py-2 border-b">
                           <span className={`px-2 py-1 rounded text-xs ${

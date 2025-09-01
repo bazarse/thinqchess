@@ -66,9 +66,6 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     try {
-      // Set loading state to prevent flickering
-      setIsLoading(true);
-      
       // Clear localStorage token immediately
       localStorage.removeItem('admin-token');
       
@@ -81,16 +78,19 @@ export default function AdminLayout({ children }) {
       // Clear any stored auth tokens
       document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       
-      // Update state
+      // Update state immediately
       setIsAuthenticated(false);
+      setIsLoading(false);
       
-      // Force immediate redirect
-      window.location.href = '/admin';
+      // Use router.push instead of window.location to prevent flickering
+      router.push('/admin');
       
     } catch (error) {
       console.error('Logout error:', error);
-      // Force redirect even on error
-      window.location.href = '/admin';
+      // Update state and redirect even on error
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      router.push('/admin');
     }
   };
 
@@ -118,7 +118,14 @@ export default function AdminLayout({ children }) {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     router.push('/admin');
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3AA0] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
