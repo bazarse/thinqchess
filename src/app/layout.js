@@ -44,25 +44,31 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: '/queen-favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', type: 'image/x-icon', sizes: '32x32' }
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: '32x32' },
+      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' }
     ],
     apple: [
-      { url: '/queen-favicon.svg', sizes: '180x180', type: 'image/svg+xml' }
+      { url: '/favicon.png', sizes: '180x180', type: 'image/png' }
     ],
-    shortcut: '/queen-favicon.svg',
+    shortcut: '/favicon.png',
+    other: [
+      { rel: 'icon', url: '/favicon.png', type: 'image/png' },
+      { rel: 'mask-icon', url: '/favicon.png', color: '#2B3AA0' }
+    ]
   },
   openGraph: {
     title: "ThinQ Chess Academy",
-    description: "Learn Chess from Expert Coaches",
+    description: "Learn Chess from Expert Coaches - Professional Chess Training & Tournaments",
     url: "https://www.thinqchess.com",
     siteName: "ThinQ Chess Academy",
     images: [
       {
-        url: "/queen-favicon.svg",
+        url: "https://www.thinqchess.com/favicon.png",
         width: 1200,
         height: 630,
-        alt: "ThinQ Chess Academy",
+        alt: "ThinQ Chess Academy - Professional Chess Training",
       },
     ],
     locale: "en_US",
@@ -119,32 +125,34 @@ export default function RootLayout({ children }) {
         />
 
         {/* Open Graph Metadata */}
-        <meta property="og:title" content="ThinQ Chess" />
+        <meta property="og:title" content="ThinQ Chess Academy" />
         <meta
           property="og:description"
-          content="Join ThinQ Chess to sharpen your mind through engaging chess programs for all ages!"
+          content="Professional Chess Training & Tournaments - Join ThinQ Chess to sharpen your mind through engaging chess programs for all ages!"
         />
         <meta
           property="og:image"
-          content="https://thinqchess.com/queen-favicon.svg"
+          content="https://www.thinqchess.com/favicon.png"
         />
-        <meta property="og:url" content="https://thinqchess.com" />
+        <meta property="og:url" content="https://www.thinqchess.com" />
         <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="ThinQ Chess Academy" />
 
-        {/* Twitter Preview (optional) */}
+        {/* Twitter Preview */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ThinQ Chess" />
+        <meta name="twitter:title" content="ThinQ Chess Academy" />
         <meta
           name="twitter:description"
-          content="Join ThinQ Chess to sharpen your mind through engaging chess programs for all ages!"
+          content="Professional Chess Training & Tournaments - Join ThinQ Chess to sharpen your mind through engaging chess programs for all ages!"
         />
         <meta
           name="twitter:image"
-          content="https://thinqchess.com/queen-favicon.svg"
+          content="https://www.thinqchess.com/favicon.png"
         />
+        <meta name="twitter:site" content="@ThinQChess" />
 
         {/* Favicon */}
-        <link rel="icon" href="/queen-favicon.svg" />
+        <link rel="icon" href="/favicon.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased overflow-x-hidden`}

@@ -66,18 +66,32 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     try {
+      // Set loading state to prevent flickering
+      setIsLoading(true);
+      
+      // Clear localStorage token immediately
+      localStorage.removeItem('admin-token');
+      
       // Call logout API to clear server-side cookie
       await fetch('/api/admin/login', {
         method: 'DELETE',
         credentials: 'include'
       });
+      
+      // Clear any stored auth tokens
+      document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      
+      // Update state
+      setIsAuthenticated(false);
+      
+      // Force immediate redirect
+      window.location.href = '/admin';
+      
     } catch (error) {
       console.error('Logout error:', error);
+      // Force redirect even on error
+      window.location.href = '/admin';
     }
-    // Clear any stored auth tokens
-    document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    setIsAuthenticated(false);
-    router.push('/admin');
   };
 
   const handleNavigation = (href) => {

@@ -12,19 +12,43 @@ export async function POST(request) {
       );
     }
 
-    console.log('💳 Creating Live Razorpay Order:', {
+    console.log('💳 Creating Razorpay Order:', {
       amount_received: amount,
       amount_in_paise: amount * 100,
       currency
     });
 
-    // Live Razorpay integration with hardcoded credentials
+    // Get Razorpay credentials from admin settings
+    const { getDB } = require('../../../../lib/database.js');
+    const db = getDB();
+    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+    
+    let razorpayKeyId = 'rzp_live_z71oXRZ0avccLv'; // Default live key
+    let razorpayKeySecret = 'uNuvlB1ovlLeGTUmyBQi6qPU'; // Default live secret
+    
+    if (settings && settings.payment_settings) {
+      try {
+        const paymentSettings = typeof settings.payment_settings === 'string' 
+          ? JSON.parse(settings.payment_settings) 
+          : settings.payment_settings;
+        
+        if (paymentSettings.razorpay_key_id) {
+          razorpayKeyId = paymentSettings.razorpay_key_id;
+        }
+        if (paymentSettings.razorpay_key_secret) {
+          razorpayKeySecret = paymentSettings.razorpay_key_secret;
+        }
+      } catch (e) {
+        console.error('Error parsing payment settings:', e);
+      }
+    }
+
     try {
       const Razorpay = (await import('razorpay')).default;
 
       const razorpay = new Razorpay({
-        key_id: 'rzp_live_z71oXRZ0avccLv',
-        key_secret: 'uNuvlB1ovlLeGTUmyBQi6qPU',
+        key_id: razorpayKeyId,
+        key_secret: razorpayKeySecret,
       });
 
       const amountInPaise = Math.round(amount * 100); // Ensure integer paise
@@ -54,7 +78,7 @@ export async function POST(request) {
       return NextResponse.json({
         success: true,
         order: order,
-        key: 'rzp_live_z71oXRZ0avccLv',
+        key: razorpayKeyId,
         message: 'Order created successfully'
       });
 
@@ -86,13 +110,34 @@ export async function PUT(request) {
       formData
     } = body;
 
-    // Live payment verification
+    // Get Razorpay secret from admin settings for payment verification
+    const { getDB } = require('../../../../lib/database.js');
+    const db = getDB();
+    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+    
+    let razorpayKeySecret = 'uNuvlB1ovlLeGTUmyBQi6qPU'; // Default live secret
+    
+    if (settings && settings.payment_settings) {
+      try {
+        const paymentSettings = typeof settings.payment_settings === 'string' 
+          ? JSON.parse(settings.payment_settings) 
+          : settings.payment_settings;
+        
+        if (paymentSettings.razorpay_key_secret) {
+          razorpayKeySecret = paymentSettings.razorpay_key_secret;
+        }
+      } catch (e) {
+        console.error('Error parsing payment settings:', e);
+      }
+    }
+
+    // Payment verification
     try {
       const crypto = await import('crypto');
 
       const body_string = razorpay_order_id + "|" + razorpay_payment_id;
       const expected_signature = crypto
-        .createHmac('sha256', 'uNuvlB1ovlLeGTUmyBQi6qPU') // Live secret key
+        .createHmac('sha256', razorpayKeySecret)
         .update(body_string.toString())
         .digest('hex');
 

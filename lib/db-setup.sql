@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     {"id": "under_16", "name": "Under 16", "fee": 450, "age_min": 12, "age_max": 16, "active": true},
     {"id": "open", "name": "Open (Any Age)", "fee": 500, "age_min": null, "age_max": null, "active": true}
   ]'::json,
+  payment_settings JSON DEFAULT '{"payment_mode": "razorpay", "razorpay_key_id": "rzp_live_z71oXRZ0avccLv", "razorpay_key_secret": "uNuvlB1ovlLeGTUmyBQi6qPU", "test_mode": false}'::json,
+  google_settings JSON DEFAULT '{"places_api_key": "", "place_id_jp_nagar": "ChXdvpvpgI0jaOm_lM-Zf9XXYjM", "place_id_akshayanagar": "", "reviews_enabled": true}'::json,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

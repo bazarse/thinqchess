@@ -27,13 +27,14 @@ export async function GET(request) {
     }
 
     if (!googleApiKey) {
-      console.log('🔄 No Google API key found, using mock data');
+      console.log('🔄 No Google API key found, returning empty reviews');
       return NextResponse.json({
         success: true,
-        source: 'mock',
-        reviews: getMockReviews(),
-        rating: 4.8,
-        total_reviews: 25
+        source: 'no_api_key',
+        reviews: [],
+        rating: 0,
+        total_reviews: 0,
+        message: 'Google API key not configured'
       });
     }
 
@@ -69,27 +70,28 @@ export async function GET(request) {
     } else {
       console.error('Google Places API error:', data.status, data.error_message);
       
-      // Fallback to mock data
+      // Return empty reviews on API error
       return NextResponse.json({
-        success: true,
-        source: 'mock_fallback',
-        reviews: getMockReviews(),
-        rating: 4.8,
-        total_reviews: 25,
-        error: data.error_message
+        success: false,
+        source: 'api_error',
+        reviews: [],
+        rating: 0,
+        total_reviews: 0,
+        error: data.error_message || 'Google API error'
       });
     }
 
   } catch (error) {
     console.error('Error fetching Google reviews:', error);
     
-    // Fallback to mock data on error
+    // Return empty reviews on error
     return NextResponse.json({
-      success: true,
-      source: 'mock_error',
-      reviews: getMockReviews(),
-      rating: 4.8,
-      total_reviews: 25
+      success: false,
+      source: 'fetch_error',
+      reviews: [],
+      rating: 0,
+      total_reviews: 0,
+      error: 'Failed to fetch reviews'
     });
   }
 }

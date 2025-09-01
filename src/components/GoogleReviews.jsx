@@ -33,11 +33,17 @@ const GoogleReviews = ({ location = "JP Nagar", placeId = "ChXdvpvpgI0jaOm_lM-Zf
         });
       } else {
         console.error('❌ Failed to fetch reviews:', data.error);
-        // Keep empty state or show error
+        setReviews([]);
+        setRating(0);
+        setTotalReviews(0);
+        setSource('error');
       }
     } catch (error) {
       console.error('❌ Error fetching reviews:', error);
-      // Keep empty state or show error
+      setReviews([]);
+      setRating(0);
+      setTotalReviews(0);
+      setSource('error');
     } finally {
       setLoading(false);
     }
@@ -95,9 +101,9 @@ const GoogleReviews = ({ location = "JP Nagar", placeId = "ChXdvpvpgI0jaOm_lM-Zf
                   ✅ Live from Google
                 </span>
               )}
-              {source.includes('mock') && (
-                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                  🎯 Demo Data
+              {(source === 'no_api_key' || source === 'error' || source === 'api_error') && (
+                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                  ⚠️ Setup Required
                 </span>
               )}
             </div>
@@ -117,25 +123,37 @@ const GoogleReviews = ({ location = "JP Nagar", placeId = "ChXdvpvpgI0jaOm_lM-Zf
       </div>
 
       <div className="space-y-4">
-        {reviews.map((review) => (
-          <div key={review.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-start">
-              <div className="w-10 h-10 bg-[#2B3AA0] rounded-full flex items-center justify-center text-white font-bold mr-3">
-                {review.author_name.charAt(0)}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{review.author_name}</h4>
-                  <span className="text-sm text-gray-500">{review.time}</span>
+        {reviews.length > 0 ? (
+          reviews.map((review) => (
+            <div key={review.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-start">
+                <div className="w-10 h-10 bg-[#2B3AA0] rounded-full flex items-center justify-center text-white font-bold mr-3">
+                  {review.author_name.charAt(0)}
                 </div>
-                <div className="flex items-center mb-2">
-                  {renderStars(review.rating)}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-900">{review.author_name}</h4>
+                    <span className="text-sm text-gray-500">{review.time}</span>
+                  </div>
+                  <div className="flex items-center mb-2">
+                    {renderStars(review.rating)}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{review.text}</p>
                 </div>
-                <p className="text-gray-700 leading-relaxed">{review.text}</p>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <div className="text-gray-400 mb-4">
+              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.959 8.959 0 01-4.906-1.436L3 21l2.436-5.094A8.959 8.959 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
+              </svg>
+            </div>
+            <p className="text-gray-600 mb-2">No reviews available</p>
+            <p className="text-sm text-gray-500">Configure Google Places API in admin settings to show reviews</p>
           </div>
-        ))}
+        )}
       </div>
 
       <div className="mt-6 text-center">

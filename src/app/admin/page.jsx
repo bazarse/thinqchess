@@ -143,7 +143,7 @@ const AdminLogin = () => {
                 value={credentials.email}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0] focus:border-[#2B3AA0] focus:z-10 sm:text-sm"
-                placeholder="Enter username (admin)"
+                placeholder="Enter username"
               />
             </div>
             <div>
@@ -158,7 +158,7 @@ const AdminLogin = () => {
                 value={credentials.password}
                 onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0] focus:border-[#2B3AA0] focus:z-10 sm:text-sm"
-                placeholder="Enter password (1234)"
+                placeholder="Enter password"
               />
             </div>
           </div>
@@ -190,13 +190,7 @@ const AdminLogin = () => {
             </button>
           </div>
 
-          <div className="text-center">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
-              <p className="text-xs text-blue-600">Username: <span className="font-mono bg-blue-100 px-1 rounded">admin</span></p>
-              <p className="text-xs text-blue-600">Password: <span className="font-mono bg-blue-100 px-1 rounded">1234</span></p>
-            </div>
-          </div>
+
         </form>
 
         <div className="text-center">
