@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const placeId = searchParams.get('placeId') || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM'; // Default place ID
+    const placeId = searchParams.get('placeId') || 'ChIJ-_jBcPtrrjsRvd658JobDpM'; // ThinQ Chess JP Nagar
     
     // Get Google API key from admin settings
     const { getDB } = require('../../../../lib/database.js');
@@ -28,7 +28,7 @@ export async function GET(request) {
       // Use default API key
     }
     
-    console.log('🔑 Using Google API key:', googleApiKey ? 'Found' : 'Not found');
+    console.log('🔑 Using Google API key:', googleApiKey ? googleApiKey.substring(0, 10) + '...' : 'Not found');
 
     // Always use the API key (default or from settings)
     if (!googleApiKey || googleApiKey.length < 10) {
@@ -47,9 +47,17 @@ export async function GET(request) {
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,reviews,user_ratings_total&key=${googleApiKey}`;
     
     console.log('🔍 Fetching Google Reviews for place:', placeId);
+    console.log('🔍 API URL:', url.replace(googleApiKey, 'API_KEY_HIDDEN'));
     
     const response = await fetch(url);
     const data = await response.json();
+    
+    console.log('📊 Google API Response:', {
+      status: data.status,
+      error_message: data.error_message,
+      has_result: !!data.result,
+      reviews_count: data.result?.reviews?.length || 0
+    });
 
     if (data.status === 'OK' && data.result) {
       const place = data.result;
@@ -73,7 +81,11 @@ export async function GET(request) {
         place_name: place.name
       });
     } else {
-      console.error('Google Places API error:', data.status, data.error_message);
+      console.error('❌ Google Places API error:', {
+        status: data.status,
+        error_message: data.error_message,
+        place_id: placeId
+      });
       
       // Return empty reviews on API error
       return NextResponse.json({
@@ -82,7 +94,7 @@ export async function GET(request) {
         reviews: [],
         rating: 0,
         total_reviews: 0,
-        error: data.error_message || 'Google API error'
+        error: `Google API Error: ${data.status} - ${data.error_message || 'Unknown error'}`
       });
     }
 
