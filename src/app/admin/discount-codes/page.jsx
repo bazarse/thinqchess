@@ -9,6 +9,8 @@ const DiscountCodes = () => {
   const [newCode, setNewCode] = useState({
     code: '',
     discount_percent: '',
+    discount_amount: '',
+    discount_type: 'percentage',
     usage_limit: '',
     end_date: '',
     is_active: true,
@@ -88,8 +90,8 @@ const DiscountCodes = () => {
   };
 
   const handleAddCode = async () => {
-    if (!newCode.code || !newCode.discount_percent) {
-      setMessage("Please fill code and discount percentage");
+    if (!newCode.code || (!newCode.discount_percent && !newCode.discount_amount)) {
+      setMessage("Please fill code and discount value");
       return;
     }
 
@@ -101,8 +103,10 @@ const DiscountCodes = () => {
 
       const requestBody = {
         code: codeUpper,
-        discount_percent: parseFloat(newCode.discount_percent),
-        usage_limit: newCode.usage_limit ? parseInt(newCode.usage_limit) : 100, // Default to 100 if not specified
+        discount_percent: newCode.discount_type === 'percentage' ? parseFloat(newCode.discount_percent) : 0,
+        discount_amount: newCode.discount_type === 'amount' ? parseFloat(newCode.discount_amount) : 0,
+        discount_type: newCode.discount_type,
+        usage_limit: newCode.usage_limit ? parseInt(newCode.usage_limit) : 100,
         end_date: newCode.end_date || null,
         is_active: newCode.is_active,
         code_type: isPrefix ? 'prefix' : 'manual'
@@ -125,7 +129,7 @@ const DiscountCodes = () => {
 
       if (data.success) {
         setDiscountCodes(prev => [...prev, data.discountCode]);
-        setNewCode({ code: '', discount_percent: '', usage_limit: '', end_date: '', is_active: true, code_type: 'manual' });
+        setNewCode({ code: '', discount_percent: '', discount_amount: '', discount_type: 'percentage', usage_limit: '', end_date: '', is_active: true, code_type: 'manual' });
         setMessage(`${isPrefix ? 'Prefix' : 'Discount'} code added successfully!`);
         setTimeout(() => setMessage(""), 3000);
       } else {
@@ -251,15 +255,31 @@ const DiscountCodes = () => {
               <p className="text-xs text-gray-500 mt-1">Use underscore for prefix codes (e.g., TC1_)</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Discount %</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
+              <select
+                value={newCode.discount_type}
+                onChange={(e) => setNewCode(prev => ({ ...prev, discount_type: e.target.value, discount_percent: '', discount_amount: '' }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
+              >
+                <option value="percentage">Percentage (%)</option>
+                <option value="amount">Fixed Amount (₹)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {newCode.discount_type === 'percentage' ? 'Discount %' : 'Discount Amount (₹)'}
+              </label>
               <input
                 type="number"
-                value={newCode.discount_percent}
-                onChange={(e) => setNewCode(prev => ({ ...prev, discount_percent: e.target.value }))}
+                value={newCode.discount_type === 'percentage' ? newCode.discount_percent : newCode.discount_amount}
+                onChange={(e) => setNewCode(prev => ({
+                  ...prev,
+                  [newCode.discount_type === 'percentage' ? 'discount_percent' : 'discount_amount']: e.target.value
+                }))}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2B3AA0]"
-                placeholder="10"
+                placeholder={newCode.discount_type === 'percentage' ? '10' : '100'}
                 min="1"
-                max="100"
+                max={newCode.discount_type === 'percentage' ? '100' : undefined}
               />
             </div>
             <div>
@@ -360,7 +380,12 @@ const DiscountCodes = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{code.discount_percent}%</div>
+                      <div className="text-sm text-gray-900">
+                        {code.discount_type === 'amount' ? `₹${code.discount_amount}` : `${code.discount_percent}%`}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {code.discount_type === 'amount' ? 'Fixed Amount' : 'Percentage'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
