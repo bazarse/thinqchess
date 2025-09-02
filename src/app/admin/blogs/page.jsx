@@ -240,13 +240,6 @@ const BlogManagement = () => {
                       alt="Featured"
                       className="w-32 h-32 object-cover rounded-lg border"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setBlogForm(prev => ({ ...prev, featured_image: '' }))}
-                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Remove Image
-                    </button>
                   </div>
                 )}
                 <SimpleImageUpload
