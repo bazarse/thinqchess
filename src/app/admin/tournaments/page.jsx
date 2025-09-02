@@ -184,12 +184,22 @@ const TournamentManagement = () => {
   };
 
   const editTournament = (tournament) => {
-    // Preserve existing dates when editing
+    // Preserve existing dates when editing - ensure dates are properly formatted
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      try {
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      } catch (e) {
+        return '';
+      }
+    };
+
     setNewTournament({
-      name: tournament.name,
-      tournament_date: tournament.start_date || tournament.tournament_date || '',
-      registration_start_date: tournament.registration_start_date || '',
-      registration_end_date: tournament.registration_end_date || '',
+      name: tournament.name || '',
+      tournament_date: formatDate(tournament.start_date || tournament.tournament_date),
+      registration_start_date: formatDate(tournament.registration_start_date),
+      registration_end_date: formatDate(tournament.registration_end_date),
       flyer_image: tournament.flyer_image || '',
       default_fee: tournament.default_fee || tournament.fee || '500',
       is_active: tournament.is_active === 1,
