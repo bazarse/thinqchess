@@ -195,15 +195,16 @@ const TournamentManagement = () => {
       }
     };
 
+    // Preserve existing dates - don't clear them
     setNewTournament({
       name: tournament.name || '',
-      tournament_date: formatDate(tournament.start_date || tournament.tournament_date),
-      registration_start_date: formatDate(tournament.registration_start_date),
-      registration_end_date: formatDate(tournament.registration_end_date),
+      tournament_date: formatDate(tournament.start_date || tournament.tournament_date) || formatDate(tournament.tournament_date),
+      registration_start_date: formatDate(tournament.registration_start_date) || tournament.registration_start_date || '',
+      registration_end_date: formatDate(tournament.registration_end_date) || tournament.registration_end_date || '',
       flyer_image: tournament.flyer_image || '',
       default_fee: tournament.default_fee || tournament.fee || '500',
       is_active: tournament.is_active === 1,
-      categories: tournament.categories ? JSON.parse(tournament.categories) : []
+      categories: tournament.categories ? (typeof tournament.categories === 'string' ? JSON.parse(tournament.categories) : tournament.categories) : []
     });
     setEditingTournament(tournament);
     setShowCreateForm(true);

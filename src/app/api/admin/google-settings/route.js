@@ -12,19 +12,22 @@ export async function GET(request) {
     if (settings && settings.setting_value) {
       const googleConfig = JSON.parse(settings.setting_value);
       
-      // Return settings with masked API key for security
+      // Return settings with masked API key for security (except for internal API calls)
+      const { searchParams } = new URL(request.url);
+      const internal = searchParams.get('internal') === 'true';
+      
       return NextResponse.json({
-        places_api_key: googleConfig.places_api_key ? '••••••••' : '',
+        places_api_key: internal ? googleConfig.places_api_key : (googleConfig.places_api_key ? '••••••••' : ''),
         place_id_jp_nagar: googleConfig.place_id_jp_nagar || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
         place_id_akshayanagar: googleConfig.place_id_akshayanagar || '',
         reviews_enabled: googleConfig.reviews_enabled !== false
       });
     }
 
-    // Return default settings
+    // Return default settings with API key
     return NextResponse.json({
-      places_api_key: '',
-      place_id_jp_nagar: 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+      places_api_key: 'AIzaSyDznXxcO6o_OdXyHYJnu5K9myYAV2aGBoY',
+      place_id_jp_nagar: 'ChIJ-_jBcPtrrjsRvd658JobDpM',
       place_id_akshayanagar: '',
       reviews_enabled: true
     });
@@ -56,7 +59,7 @@ export async function POST(request) {
     const newConfig = {
       places_api_key: body.places_api_key === '••••••••' ? 
         existingConfig.places_api_key : body.places_api_key,
-      place_id_jp_nagar: body.place_id_jp_nagar || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+      place_id_jp_nagar: body.place_id_jp_nagar || 'ChIJ-_jBcPtrrjsRvd658JobDpM',
       place_id_akshayanagar: body.place_id_akshayanagar || '',
       reviews_enabled: body.reviews_enabled !== false,
       updated_at: new Date().toISOString()

@@ -117,7 +117,8 @@ const BlogManagement = () => {
 
       if (response.ok) {
         setMessage(`Blog ${editingBlog ? 'updated' : 'created'} successfully!`);
-        setShowEditor(false);
+        await fetchBlogs(); // Wait for blogs to refresh
+        setShowEditor(false); // Navigate back to blog list
         setEditingBlog(null);
         setBlogForm({
           title: '',
@@ -125,11 +126,11 @@ const BlogManagement = () => {
           featured_image: '',
           status: 'draft'
         });
-        fetchBlogs();
         setTimeout(() => setMessage(""), 3000);
       } else {
         const errorData = await response.json();
         setMessage(errorData.error || "Error saving blog");
+        setTimeout(() => setMessage(""), 5000);
       }
     } catch (error) {
       console.error('Error saving blog:', error);
@@ -356,7 +357,11 @@ const BlogManagement = () => {
                         {blog.updated_at && blog.updated_at !== blog.created_at && (
                           <span>Updated: {(() => {
                             try {
-                              return new Date(blog.updated_at).toLocaleDateString();
+                              if (!blog.updated_at || blog.updated_at === 'Invalid Date') {
+                                return 'Recently';
+                              }
+                              const date = new Date(blog.updated_at);
+                              return isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString();
                             } catch (e) {
                               return 'Recently';
                             }

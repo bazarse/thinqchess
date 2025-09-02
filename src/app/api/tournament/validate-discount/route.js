@@ -120,14 +120,17 @@ export async function POST(request) {
     let discountAmount = 0;
     let discountPercent = 0;
     
-    if (discountData.discount_type === 'amount' && discountData.discount_amount > 0) {
+    // Check if there's a fixed amount discount first (higher priority)
+    if (discountData.discount_amount && parseFloat(discountData.discount_amount) > 0) {
       // Fixed amount discount takes priority
       discountAmount = parseFloat(discountData.discount_amount);
       discountPercent = 0;
-    } else if (discountData.discount_percent > 0) {
-      // Percentage discount
-      discountPercent = discountData.discount_percent;
+      console.log('💰 Using fixed amount discount:', discountAmount);
+    } else if (discountData.discount_percent && parseFloat(discountData.discount_percent) > 0) {
+      // Percentage discount as fallback
+      discountPercent = parseFloat(discountData.discount_percent);
       discountAmount = (parseFloat(amount) * discountPercent) / 100;
+      console.log('📊 Using percentage discount:', discountPercent + '%');
     }
     
     const finalAmount = Math.max(0, parseFloat(amount) - discountAmount);
@@ -142,9 +145,9 @@ export async function POST(request) {
     return NextResponse.json({
       valid: true,
       discount_percent: discountPercent,
-      discount_amount: Math.round(discountAmount * 100) / 100,
-      final_amount: Math.round(finalAmount * 100) / 100,
-      original_amount: Math.round(parseFloat(amount) * 100) / 100,
+      discount_amount: parseFloat(discountAmount.toFixed(2)),
+      final_amount: parseFloat(finalAmount.toFixed(2)),
+      original_amount: parseFloat(parseFloat(amount).toFixed(2)),
       code: code.toUpperCase(),
       discount_id: discountData.id
     });

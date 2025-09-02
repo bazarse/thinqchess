@@ -105,11 +105,11 @@ export async function PUT(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if blog exists
-    const existingBlog = db.prepare('SELECT * FROM blogs WHERE id = ?').get(id);
+    const existingBlog = await db.get('SELECT * FROM blogs WHERE id = ?', [id]);
     if (!existingBlog) {
       return NextResponse.json(
         { error: 'Blog not found' },
@@ -124,7 +124,7 @@ export async function PUT(request) {
       .replace(/(^-|-$)/g, '');
 
     // Check if slug already exists for a different blog
-    const slugExists = db.prepare('SELECT id FROM blogs WHERE slug = ? AND id != ?').get(slug, id);
+    const slugExists = await db.get('SELECT id FROM blogs WHERE slug = ? AND id != ?', [slug, id]);
     if (slugExists) {
       return NextResponse.json(
         { error: 'A blog with this title already exists' },
@@ -132,15 +132,13 @@ export async function PUT(request) {
       );
     }
 
-    // Update blog
-    const updateStmt = db.prepare(`
+    // Update blog with proper timestamp
+    const result = await db.run(`
       UPDATE blogs
       SET title = ?, content = ?, excerpt = ?, slug = ?, author = ?,
-          status = ?, tags = ?, featured_image = ?, updated_at = CURRENT_TIMESTAMP
+          status = ?, tags = ?, featured_image = ?, updated_at = ?
       WHERE id = ?
-    `);
-
-    updateStmt.run(
+    `, [
       title,
       content,
       excerpt || '',
@@ -149,11 +147,12 @@ export async function PUT(request) {
       status || 'draft',
       JSON.stringify(tags || []),
       featured_image || '',
+      new Date().toISOString(),
       id
-    );
+    ]);
 
     // Get updated blog
-    const updatedBlog = db.prepare('SELECT * FROM blogs WHERE id = ?').get(id);
+    const updatedBlog = await db.get('SELECT * FROM blogs WHERE id = ?', [id]);
 
     // Parse tags for response
     updatedBlog.tags = updatedBlog.tags ? JSON.parse(updatedBlog.tags) : [];
@@ -185,11 +184,11 @@ export async function DELETE(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Delete blog
-    db.prepare('DELETE FROM blogs WHERE id = ?').run(id);
+    await db.run('DELETE FROM blogs WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,

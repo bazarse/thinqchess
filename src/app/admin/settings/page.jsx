@@ -26,8 +26,8 @@ const AdminSettings = () => {
   });
 
   const [googleSettings, setGoogleSettings] = useState({
-    places_api_key: '',
-    place_id_jp_nagar: 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+    places_api_key: 'AIzaSyDznXxcO6o_OdXyHYJnu5K9myYAV2aGBoY',
+    place_id_jp_nagar: 'ChIJ-_jBcPtrrjsRvd658JobDpM',
     place_id_akshayanagar: '',
     reviews_enabled: true
   });

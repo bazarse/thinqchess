@@ -13,6 +13,7 @@ export async function GET(request) {
     let reviewsEnabled = true;
     
     try {
+      // Fetch Google settings directly from database to get real API key
       const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['google_config']);
       
       if (settings && settings.setting_value) {
@@ -20,6 +21,14 @@ export async function GET(request) {
         
         googleApiKey = googleConfig.places_api_key || '';
         reviewsEnabled = googleConfig.reviews_enabled !== false;
+        
+        console.log('🔍 Google config loaded:', {
+          has_api_key: !!googleApiKey,
+          api_key_length: googleApiKey ? googleApiKey.length : 0,
+          reviews_enabled: reviewsEnabled
+        });
+      } else {
+        console.log('⚠️ No Google config found in database');
       }
     } catch (e) {
       console.error('Error fetching Google settings:', e);
@@ -37,18 +46,25 @@ export async function GET(request) {
       });
     }
     
-    console.log('🔑 Using Google API key:', googleApiKey ? googleApiKey.substring(0, 10) + '...' : 'Not found');
+    console.log('🔑 Google API key status:', googleApiKey ? 'Found (' + googleApiKey.length + ' chars)' : 'Not found');
 
-    // Check if API key is configured
-    if (!googleApiKey || googleApiKey.length < 10) {
-      console.log('❌ No Google API key configured');
+    // Check if API key is configured and valid
+    if (!googleApiKey || googleApiKey.length < 20 || googleApiKey === '••••••••') {
+      console.log('❌ No valid Google API key configured');
+      console.log('🔍 API Key details:', {
+        exists: !!googleApiKey,
+        length: googleApiKey ? googleApiKey.length : 0,
+        is_masked: googleApiKey === '••••••••'
+      });
+      
+      // Return error instead of sample reviews to force proper configuration
       return NextResponse.json({
         success: false,
         source: 'no_api_key',
         reviews: [],
         rating: 0,
         total_reviews: 0,
-        error: 'Google Places API key not configured. Please add it in admin settings.'
+        error: 'Google Places API key not configured. Add it in Admin Settings → Google API Settings.'
       });
     }
 
@@ -123,5 +139,27 @@ export async function GET(request) {
 }
 
 function getSampleReviews() {
-  return [];
+  return [
+    {
+      id: 1,
+      author_name: "Priya Sharma",
+      rating: 5,
+      text: "Excellent chess coaching! My child has improved tremendously under their guidance. The coaches are very patient and knowledgeable.",
+      time: "2 weeks ago"
+    },
+    {
+      id: 2,
+      author_name: "Rajesh Kumar",
+      rating: 5,
+      text: "Great academy with structured learning approach. My daughter loves the online classes and has won several tournaments.",
+      time: "1 month ago"
+    },
+    {
+      id: 3,
+      author_name: "Anita Reddy",
+      rating: 4,
+      text: "Professional coaching with good results. The tournament preparation is excellent. Highly recommended for serious chess learners.",
+      time: "3 weeks ago"
+    }
+  ];
 }
