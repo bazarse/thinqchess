@@ -7,11 +7,11 @@ export async function GET(request) {
     const category = searchParams.get('category');
     const limit = parseInt(searchParams.get('limit')) || 50;
     
-    // Get gallery images from PostgreSQL
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    // Get gallery images from SimpleDatabase
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    let query = 'SELECT * FROM gallery_images WHERE is_active = true';
+    let query = 'SELECT * FROM gallery_images WHERE is_active = 1';
     let params = [];
 
     if (category && category !== 'all') {
@@ -26,7 +26,7 @@ export async function GET(request) {
       params.push(limit);
     }
 
-    const images = await db.prepare(query).all(...params);
+    const images = await db.all(query, params);
     
     return NextResponse.json(images);
 
