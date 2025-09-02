@@ -9,30 +9,11 @@ export async function GET(request) {
     const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
     
-    let googleApiKey = '';
+    // Use direct API key for now
+    let googleApiKey = 'AIzaSyDznXxcO6o_OdXyHYJnu5K9myYAV2aGBoY';
     let reviewsEnabled = true;
     
-    try {
-      // Fetch Google settings directly from database to get real API key
-      const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['google_config']);
-      
-      if (settings && settings.setting_value) {
-        const googleConfig = JSON.parse(settings.setting_value);
-        
-        googleApiKey = googleConfig.places_api_key || '';
-        reviewsEnabled = googleConfig.reviews_enabled !== false;
-        
-        console.log('🔍 Google config loaded:', {
-          has_api_key: !!googleApiKey,
-          api_key_length: googleApiKey ? googleApiKey.length : 0,
-          reviews_enabled: reviewsEnabled
-        });
-      } else {
-        console.log('⚠️ No Google config found in database');
-      }
-    } catch (e) {
-      console.error('Error fetching Google settings:', e);
-    }
+    console.log('🔑 Using direct API key for Google Reviews');
     
     // Check if reviews are disabled
     if (!reviewsEnabled) {
@@ -48,25 +29,7 @@ export async function GET(request) {
     
     console.log('🔑 Google API key status:', googleApiKey ? 'Found (' + googleApiKey.length + ' chars)' : 'Not found');
 
-    // Check if API key is configured and valid
-    if (!googleApiKey || googleApiKey.length < 20 || googleApiKey === '••••••••') {
-      console.log('❌ No valid Google API key configured');
-      console.log('🔍 API Key details:', {
-        exists: !!googleApiKey,
-        length: googleApiKey ? googleApiKey.length : 0,
-        is_masked: googleApiKey === '••••••••'
-      });
-      
-      // Return error instead of sample reviews to force proper configuration
-      return NextResponse.json({
-        success: false,
-        source: 'no_api_key',
-        reviews: [],
-        rating: 0,
-        total_reviews: 0,
-        error: 'Google Places API key not configured. Add it in Admin Settings → Google API Settings.'
-      });
-    }
+    console.log('🔑 API Key ready, length:', googleApiKey.length);
 
     // Fetch reviews from Google Places API
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,reviews,user_ratings_total&key=${googleApiKey}`;
