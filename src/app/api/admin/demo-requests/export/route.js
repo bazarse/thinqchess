@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const { getDB } = require('../../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url);
@@ -95,7 +95,7 @@ export async function GET(request) {
     query += ' ORDER BY created_at DESC';
 
     // Execute query
-    const requests = db.prepare(query).all(...params);
+    const requests = await db.all(query, params);
 
     if (format === 'csv') {
       // Generate CSV

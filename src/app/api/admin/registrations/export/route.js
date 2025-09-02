@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const { getDB } = require('../../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
     
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -55,7 +55,7 @@ export async function GET(request) {
     query += ' ORDER BY registered_at DESC';
 
     // Execute query
-    const registrations = db.prepare(query).all(...params);
+    const registrations = await db.all(query, params);
 
     console.log('📊 REGISTRATIONS EXPORT DEBUG:', {
       total_registrations: registrations.length,

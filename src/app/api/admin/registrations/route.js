@@ -16,14 +16,21 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit')) || 50;
     const offset = (page - 1) * limit;
 
-    // Build query based on filter
+    // Build query based on filter - try both table names
     let query = 'SELECT * FROM tournament_registrations';
     let params = [];
     let whereConditions = [];
 
-    // Only show completed payments
-    whereConditions.push('payment_status = ?');
-    params.push('completed');
+    // Check if table exists, fallback to registrations table
+    try {
+      await db.get('SELECT 1 FROM tournament_registrations LIMIT 1');
+    } catch (e) {
+      query = 'SELECT * FROM registrations';
+    }
+
+    // Show all payments, not just completed
+    // whereConditions.push('payment_status = ?');
+    // params.push('completed');
 
     console.log('🔍 ADMIN REGISTRATIONS QUERY:', {
       filter,
@@ -111,9 +118,9 @@ export async function GET(request) {
       })));
     }
 
-    // Get total count and revenue for pagination and stats (only completed payments)
-    let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations WHERE payment_status = ?';
-    let countParams = ['completed'];
+    // Get total count and revenue for pagination and stats (all registrations)
+    let countQuery = 'SELECT COUNT(*) as total, COALESCE(SUM(amount_paid), 0) as total_revenue FROM tournament_registrations';
+    let countParams = [];
 
     if (filter !== 'all') {
       countQuery += ' AND type = ?';

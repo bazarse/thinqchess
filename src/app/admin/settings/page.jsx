@@ -18,11 +18,11 @@ const AdminSettings = () => {
   });
 
   const [paymentSettings, setPaymentSettings] = useState({
-    payment_mode: 'razorpay', // Only razorpay mode
-    razorpay_key_id: 'rzp_live_z71oXRZ0avccLv',
-    razorpay_key_secret: 'uNuvlB1ovlLeGTUmyBQi6qPU',
+    payment_mode: 'razorpay',
+    razorpay_key_id: '',
+    razorpay_key_secret: '',
     razorpay_webhook_secret: '',
-    test_mode: false // Live mode by default
+    test_mode: false
   });
 
   const [googleSettings, setGoogleSettings] = useState({
@@ -126,8 +126,13 @@ const AdminSettings = () => {
     setMessage('');
 
     // Validation
-    if (formData.newPassword && formData.newPassword.length > 8) {
-      setError('Password must be maximum 8 characters');
+    if (formData.newPassword && formData.newPassword.length < 4) {
+      setError('Password must be at least 4 characters');
+      return;
+    }
+    
+    if (formData.newPassword && formData.newPassword.length > 20) {
+      setError('Password must be maximum 20 characters');
       return;
     }
 
@@ -254,6 +259,115 @@ const AdminSettings = () => {
       </div>
 
 
+
+      {/* Payment Settings Form */}
+      <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">💳 Payment Settings</h2>
+        
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          {/* Test/Live Mode Toggle */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-blue-900">Payment Mode</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  {paymentSettings.test_mode ? 
+                    '🧪 Test Mode: Using test Razorpay credentials for safe testing' : 
+                    '🔴 Live Mode: Using live Razorpay credentials for real payments'
+                  }
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="test_mode"
+                  checked={paymentSettings.test_mode}
+                  onChange={handlePaymentChange}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-gray-900">
+                  {paymentSettings.test_mode ? 'Test Mode' : 'Live Mode'}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Razorpay Credentials */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              {paymentSettings.test_mode ? 'Test' : 'Live'} Razorpay Credentials
+            </h3>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Razorpay Key ID
+              </label>
+              <input
+                type="text"
+                name="razorpay_key_id"
+                value={paymentSettings.razorpay_key_id}
+                onChange={handlePaymentChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                placeholder={paymentSettings.test_mode ? 'rzp_test_...' : 'rzp_live_...'}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Razorpay Key Secret
+              </label>
+              <input
+                type="password"
+                name="razorpay_key_secret"
+                value={paymentSettings.razorpay_key_secret}
+                onChange={handlePaymentChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                placeholder="Enter Razorpay secret key"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Webhook Secret (Optional)
+              </label>
+              <input
+                type="password"
+                name="razorpay_webhook_secret"
+                value={paymentSettings.razorpay_webhook_secret}
+                onChange={handlePaymentChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+                placeholder="Enter webhook secret"
+              />
+            </div>
+          </div>
+
+          {/* Test Mode Instructions */}
+          {paymentSettings.test_mode && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-yellow-800 mb-2">🧪 Test Mode Instructions:</h4>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li>• Use test card: 4111 1111 1111 1111</li>
+                <li>• Any future expiry date (e.g., 12/25)</li>
+                <li>• Any CVV (e.g., 123)</li>
+                <li>• No real money will be charged</li>
+                <li>• Perfect for testing tournament registrations</li>
+              </ul>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-[#2B3AA0] text-white rounded-lg hover:bg-[#1e2a70] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save Payment Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Account Settings Form */}
       <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl">

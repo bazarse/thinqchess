@@ -4,8 +4,8 @@ import { updateTournamentStatus } from '../../../../../lib/tournament-utils.js';
 // GET - Fetch active tournament for frontend
 export async function GET() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Auto-update tournament status first
     updateTournamentStatus();

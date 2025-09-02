@@ -75,22 +75,24 @@ export default function AdminLayout({ children }) {
         credentials: 'include'
       });
       
-      // Clear any stored auth tokens
+      // Clear all possible cookies
       document.cookie = 'admin-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'admin-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
       
       // Update state immediately
       setIsAuthenticated(false);
       setIsLoading(false);
       
-      // Use router.push instead of window.location to prevent flickering
-      router.push('/admin');
+      // Force page reload to clear all state
+      window.location.href = '/admin';
       
     } catch (error) {
       console.error('Logout error:', error);
-      // Update state and redirect even on error
+      // Force logout even on error
+      localStorage.removeItem('admin-token');
       setIsAuthenticated(false);
       setIsLoading(false);
-      router.push('/admin');
+      window.location.href = '/admin';
     }
   };
 
@@ -115,14 +117,19 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  // Redirect to login if not authenticated
+  // Show login prompt if not authenticated
   if (!isAuthenticated) {
-    router.push('/admin');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2B3AA0] mx-auto"></div>
-          <p className="mt-4 text-gray-600">Redirecting to login...</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please log in to access the admin panel.</p>
+          <button
+            onClick={() => router.push('/admin')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );

@@ -17,7 +17,14 @@ const GoogleReviews = ({ location = "JP Nagar", placeId = "ChIJ-_jBcPtrrjsRvd658
       setLoading(true);
       console.log('🔍 Fetching reviews for:', location);
 
-      const response = await fetch(`/api/google-reviews?placeId=${placeId}`);
+      const response = await fetch(`/api/google-reviews?placeId=${placeId}`, {
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
       const data = await response.json();
 
       if (data.success) {

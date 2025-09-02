@@ -118,14 +118,22 @@ const BlogManagement = () => {
       if (response.ok) {
         setMessage(`Blog ${editingBlog ? 'updated' : 'created'} successfully!`);
         setShowEditor(false);
+        setEditingBlog(null);
+        setBlogForm({
+          title: '',
+          content: '',
+          featured_image: '',
+          status: 'draft'
+        });
         fetchBlogs();
         setTimeout(() => setMessage(""), 3000);
       } else {
-        setMessage("Error saving blog");
+        const errorData = await response.json();
+        setMessage(errorData.error || "Error saving blog");
       }
     } catch (error) {
       console.error('Error saving blog:', error);
-      setMessage("Error saving blog");
+      setMessage(`Error saving blog: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -235,7 +243,7 @@ const BlogManagement = () => {
                     <button
                       type="button"
                       onClick={() => setBlogForm(prev => ({ ...prev, featured_image: '' }))}
-                      className="mt-2 text-sm text-red-600 hover:text-red-800"
+                      className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
                     >
                       Remove Image
                     </button>
@@ -351,8 +359,8 @@ const BlogManagement = () => {
                         }`}>
                           {blog.status}
                         </span>
-                        <span>Created: {new Date(blog.created_at).toLocaleDateString()}</span>
-                        {blog.updated_at !== blog.created_at && (
+                        <span>Created: {blog.created_at ? new Date(blog.created_at).toLocaleDateString() : 'Unknown'}</span>
+                        {blog.updated_at && blog.updated_at !== blog.created_at && (
                           <span>Updated: {new Date(blog.updated_at).toLocaleDateString()}</span>
                         )}
                       </div>
@@ -380,12 +388,20 @@ const BlogManagement = () => {
 
         {/* Success/Error Message */}
         {message && (
-          <div className={`mt-4 p-3 rounded-lg ${
+          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-md ${
             message.includes('successfully') 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
+              ? 'bg-green-100 text-green-800 border border-green-200' 
+              : 'bg-red-100 text-red-800 border border-red-200'
           }`}>
-            {message}
+            <div className="flex items-center justify-between">
+              <span>{message}</span>
+              <button 
+                onClick={() => setMessage('')}
+                className="ml-2 text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
     </div>

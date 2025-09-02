@@ -37,12 +37,42 @@ const AdminDashboard = () => {
       const response = await fetch('/api/admin/dashboard-stats');
       if (response.ok) {
         const data = await response.json();
-        setStats(data.stats);
-        setPendingDemoRequests(data.pendingDemos || []);
-        setLastUpdated(new Date());
+        if (data.success) {
+          setStats(data.stats || {});
+          setPendingDemoRequests(data.pendingDemos || []);
+          setLastUpdated(new Date());
+        } else {
+          console.error('Dashboard API error:', data.error);
+          // Set default stats on error
+          setStats({
+            totalRegistrations: 0,
+            totalBlogs: 0,
+            publishedBlogs: 0,
+            totalGalleryImages: 0,
+            totalDiscountCodes: 0,
+            activeDiscountCodes: 0,
+            totalRevenue: 0,
+            pendingDemos: 0,
+            registrationsByType: []
+          });
+        }
+      } else {
+        throw new Error(`HTTP ${response.status}`);
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      // Set default stats on error
+      setStats({
+        totalRegistrations: 0,
+        totalBlogs: 0,
+        publishedBlogs: 0,
+        totalGalleryImages: 0,
+        totalDiscountCodes: 0,
+        activeDiscountCodes: 0,
+        totalRevenue: 0,
+        pendingDemos: 0,
+        registrationsByType: []
+      });
     } finally {
       setLoading(false);
       if (isManualRefresh) {

@@ -26,7 +26,7 @@ const BookADemo = () => {
         phone: phoneNumber, // Use state value instead of form value
         child_name: values.childName,
         age: values.Age,
-        past_training: values.programLevel,
+        chess_experience: values.programLevel,
         state: values.state,
         country: values.country,
         message: values.message || "",
@@ -222,8 +222,8 @@ const BookADemo = () => {
                   ]}
                 >
                   <Radio.Group>
-                    <Radio value="male">Yes</Radio>
-                    <Radio value="female">No</Radio>
+                    <Radio value="Yes">Yes</Radio>
+                    <Radio value="No">No</Radio>
                   </Radio.Group>
                 </Form.Item>
               </div>

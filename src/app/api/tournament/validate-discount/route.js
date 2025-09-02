@@ -116,10 +116,21 @@ export async function POST(request) {
       );
     }
 
-    // Calculate discount amount
-    const discountPercent = discountData.discount_percent;
-    const discountAmount = (parseFloat(amount) * discountPercent) / 100;
-    const finalAmount = parseFloat(amount) - discountAmount;
+    // Calculate discount amount - prioritize fixed amount over percentage
+    let discountAmount = 0;
+    let discountPercent = 0;
+    
+    if (discountData.discount_type === 'amount' && discountData.discount_amount > 0) {
+      // Fixed amount discount takes priority
+      discountAmount = parseFloat(discountData.discount_amount);
+      discountPercent = 0;
+    } else if (discountData.discount_percent > 0) {
+      // Percentage discount
+      discountPercent = discountData.discount_percent;
+      discountAmount = (parseFloat(amount) * discountPercent) / 100;
+    }
+    
+    const finalAmount = Math.max(0, parseFloat(amount) - discountAmount);
 
     console.log('✅ Discount validation successful:', {
       code: code.toUpperCase(),
@@ -131,10 +142,10 @@ export async function POST(request) {
     return NextResponse.json({
       valid: true,
       discount_percent: discountPercent,
-      discount_amount: discountAmount,
-      final_amount: finalAmount,
-      original_amount: parseFloat(amount),
-      code: code.toUpperCase(), // Return the original code entered
+      discount_amount: Math.round(discountAmount * 100) / 100,
+      final_amount: Math.round(finalAmount * 100) / 100,
+      original_amount: Math.round(parseFloat(amount) * 100) / 100,
+      code: code.toUpperCase(),
       discount_id: discountData.id
     });
 

@@ -151,6 +151,8 @@ const DiscountCodes = () => {
     if (!code) return;
 
     try {
+      const newStatus = code.is_active ? 0 : 1; // Convert boolean to integer
+      
       const response = await fetch('/api/admin/discount-codes', {
         method: 'PUT',
         headers: {
@@ -158,19 +160,16 @@ const DiscountCodes = () => {
         },
         body: JSON.stringify({
           id: code.id,
-          is_active: !code.is_active
+          is_active: newStatus
         }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setDiscountCodes(prev =>
-          prev.map(c =>
-            c.id === id ? { ...c, is_active: !c.is_active } : c
-          )
-        );
-        setMessage(`Discount code ${!code.is_active ? 'activated' : 'deactivated'} successfully!`);
+        // Refresh the entire list to ensure consistency
+        await fetchDiscountCodes();
+        setMessage(`Discount code ${newStatus ? 'activated' : 'deactivated'} successfully!`);
         setTimeout(() => setMessage(""), 3000);
       } else {
         setMessage(data.error || "Failed to update discount code status");

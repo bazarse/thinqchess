@@ -19,29 +19,31 @@ export async function POST(request) {
     });
 
     // Get Razorpay credentials from admin settings
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
-    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
+    const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['payment_config']);
     
-    let razorpayKeyId = 'rzp_live_z71oXRZ0avccLv'; // Default live key
-    let razorpayKeySecret = 'uNuvlB1ovlLeGTUmyBQi6qPU'; // Default live secret
+    // Default test credentials for safety
+    let razorpayKeyId = 'rzp_test_default';
+    let razorpayKeySecret = 'test_secret_default';
+    let isTestMode = true;
     
-    if (settings && settings.payment_settings) {
+    if (settings && settings.setting_value) {
       try {
-        const paymentSettings = typeof settings.payment_settings === 'string' 
-          ? JSON.parse(settings.payment_settings) 
-          : settings.payment_settings;
+        const paymentConfig = JSON.parse(settings.setting_value);
         
-        if (paymentSettings.razorpay_key_id) {
-          razorpayKeyId = paymentSettings.razorpay_key_id;
-        }
-        if (paymentSettings.razorpay_key_secret) {
-          razorpayKeySecret = paymentSettings.razorpay_key_secret;
+        if (paymentConfig.razorpay_key_id && paymentConfig.razorpay_key_secret) {
+          razorpayKeyId = paymentConfig.razorpay_key_id;
+          razorpayKeySecret = paymentConfig.razorpay_key_secret;
+          isTestMode = paymentConfig.test_mode || false;
         }
       } catch (e) {
         console.error('Error parsing payment settings:', e);
       }
     }
+
+    console.log('💳 Payment Mode:', isTestMode ? 'TEST MODE' : 'LIVE MODE');
+    console.log('🔑 Using Key ID:', razorpayKeyId.substring(0, 12) + '...');
 
     try {
       const Razorpay = (await import('razorpay')).default;
@@ -111,25 +113,27 @@ export async function PUT(request) {
     } = body;
 
     // Get Razorpay secret from admin settings for payment verification
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
-    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
+    const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['payment_config']);
     
-    let razorpayKeySecret = 'uNuvlB1ovlLeGTUmyBQi6qPU'; // Default live secret
+    let razorpayKeySecret = 'test_secret_default';
+    let isTestMode = true;
     
-    if (settings && settings.payment_settings) {
+    if (settings && settings.setting_value) {
       try {
-        const paymentSettings = typeof settings.payment_settings === 'string' 
-          ? JSON.parse(settings.payment_settings) 
-          : settings.payment_settings;
+        const paymentConfig = JSON.parse(settings.setting_value);
         
-        if (paymentSettings.razorpay_key_secret) {
-          razorpayKeySecret = paymentSettings.razorpay_key_secret;
+        if (paymentConfig.razorpay_key_secret) {
+          razorpayKeySecret = paymentConfig.razorpay_key_secret;
+          isTestMode = paymentConfig.test_mode || false;
         }
       } catch (e) {
         console.error('Error parsing payment settings:', e);
       }
     }
+
+    console.log('🔐 Verifying payment in:', isTestMode ? 'TEST MODE' : 'LIVE MODE');
 
     // Payment verification
     try {
@@ -151,9 +155,9 @@ export async function PUT(request) {
       console.log('✅ Payment verified successfully');
 
       // Payment verified - save registration
-      // Save registration data to SQLite database
-      const { getDB } = require('../../../../lib/database.js');
-      const db = getDB();
+      // Save registration data to SimpleDatabase
+      const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+      const db = new SimpleDatabase();
 
       // Calculate age from DOB
       const calculateAge = (dob) => {

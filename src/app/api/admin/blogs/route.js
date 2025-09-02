@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get blogs from PostgreSQL
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Get blogs from SimpleDatabase
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const blogs = await db.prepare('SELECT * FROM blogs ORDER BY created_at DESC').all();
+    const blogs = await db.all('SELECT * FROM blogs ORDER BY created_at DESC');
 
     // Parse tags if they're stored as JSON strings
     const blogsWithParsedTags = blogs.map(blog => ({
@@ -44,10 +44,10 @@ export async function POST(request) {
       .replace(/(^-|-$)/g, '');
 
     // Check if slug already exists
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const existingBlog = db.prepare('SELECT id FROM blogs WHERE slug = ?').get(slug);
+    const existingBlog = await db.get('SELECT id FROM blogs WHERE slug = ?', [slug]);
     if (existingBlog) {
       return NextResponse.json(
         { error: 'A blog with this title already exists' },

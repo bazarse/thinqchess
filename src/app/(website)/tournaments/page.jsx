@@ -52,14 +52,14 @@ const Tournaments = () => {
   ];
 
   const [formData, setFormData] = useState({
-    particpantFirstName: "",
-    particpantMiddleName: "",
-    particpantLastName: "",
-    mail_id: "",
-    phone_no: "",
+    participantFirstName: "",
+    participantMiddleName: "",
+    participantLastName: "",
+    email: "",
+    phone: "",
     dob: "",
     gender: "",
-    fidaID: "",
+    fideId: "",
     tournament_type: "",
     country: "",
     country_code: "",
@@ -297,14 +297,14 @@ const Tournaments = () => {
 
   // Generate email-based coupon
   const generateEmailCoupon = async () => {
-    if (!formData.mail_id) return;
+    if (!formData.email) return;
 
     setGeneratingCoupon(true);
     try {
       const response = await fetch('/api/generate-coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.mail_id })
+        body: JSON.stringify({ email: formData.email })
       });
 
       if (response.ok) {
@@ -328,7 +328,7 @@ const Tournaments = () => {
     setErrorMessage("");
     const { name, value } = e.target;
 
-    if (name === "mail_id") {
+    if (name === "email") {
       // Check for email-based coupons when email changes
       checkEmailCoupon(value);
     }
@@ -444,8 +444,8 @@ const Tournaments = () => {
     }
 
     if (
-      !formData.particpantFirstName ||
-      !formData.particpantLastName ||
+      !formData.participantFirstName ||
+      !formData.participantLastName ||
       !formData.dob ||
       !formData.gender ||
       !formData.country ||
@@ -481,9 +481,9 @@ const Tournaments = () => {
           receipt: `tournament_${Date.now()}`,
           notes: {
             tournament_id: activeTournament?.id || null,
-            participant_name: `${formData.particpantFirstName} ${formData.particpantLastName}`,
-            email: formData.mail_id,
-            phone: formData.phone_no
+            participant_name: `${formData.participantFirstName} ${formData.participantLastName}`,
+            email: formData.email,
+            phone: formData.phone
           }
         }),
       });
@@ -541,9 +541,9 @@ const Tournaments = () => {
           }
         },
         prefill: {
-          name: `${formData.particpantFirstName} ${formData.particpantLastName}`,
-          email: formData.mail_id,
-          contact: formData.phone_no
+          name: `${formData.participantFirstName} ${formData.participantLastName}`,
+          email: formData.email,
+          contact: formData.phone
         },
         theme: {
           color: "#2B3AA0"
@@ -680,9 +680,9 @@ const Tournaments = () => {
           <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
             <h3 className="font-bold text-gray-800 mb-4">Registration Details:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div><strong>Name:</strong> {formData.particpantFirstName} {formData.particpantLastName}</div>
-              <div><strong>Email:</strong> {formData.mail_id}</div>
-              <div><strong>Phone:</strong> {formData.phone_no}</div>
+              <div><strong>Name:</strong> {formData.participantFirstName} {formData.participantLastName}</div>
+              <div><strong>Email:</strong> {formData.email}</div>
+              <div><strong>Phone:</strong> {formData.phone}</div>
               <div><strong>Amount Paid:</strong> ₹{finalAmount}</div>
               {registrationData.payment_id && (
                 <div><strong>Payment ID:</strong> {registrationData.payment_id}</div>
@@ -705,14 +705,14 @@ const Tournaments = () => {
 
                   // Clear ALL form data completely
                   setFormData({
-                    particpantFirstName: "",
-                    particpantMiddleName: "",
-                    particpantLastName: "",
-                    mail_id: "",
-                    phone_no: "",
+                    participantFirstName: "",
+                    participantMiddleName: "",
+                    participantLastName: "",
+                    email: "",
+                    phone: "",
                     dob: "",
                     gender: "",
-                    fidaID: "",
+                    fideId: "",
                     tournament_type: "",
                     country: "",
                     country_code: "",
@@ -977,24 +977,24 @@ const Tournaments = () => {
               <h2 className="text-[18px] mb-2">Participant Name:</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input
-                  name="particpantFirstName"
+                  name="participantFirstName"
                   placeholder="First Name *"
-                  value={formData.particpantFirstName}
+                  value={formData.participantFirstName}
                   onChange={handleChange}
                   required
                   className="p-1 border border-[#d3d1d1] rounded"
                 />
                 <input
-                  name="particpantMiddleName"
+                  name="participantMiddleName"
                   placeholder="Middle Name (Optional)"
-                  value={formData.particpantMiddleName}
+                  value={formData.participantMiddleName}
                   onChange={handleChange}
                   className="p-1 border border-[#d3d1d1] rounded"
                 />
                 <input
-                  name="particpantLastName"
+                  name="participantLastName"
                   placeholder="Last Name *"
-                  value={formData.particpantLastName}
+                  value={formData.participantLastName}
                   onChange={handleChange}
                   required
                   className="p-1 border border-[#d3d1d1] rounded"
@@ -1006,10 +1006,10 @@ const Tournaments = () => {
                 <div className="w-full">
                   <h2 className="text-[18px] mb-2">Mail ID:</h2>
                   <input
-                    name="mail_id"
+                    name="email"
                     type="email"
-                    placeholder="Mail ID *"
-                    value={formData.mail_id}
+                    placeholder="Email *"
+                    value={formData.email}
                     onChange={handleChange}
                     required
                     className="p-1 w-full border border-[#d3d1d1] rounded"
@@ -1022,14 +1022,14 @@ const Tournaments = () => {
                     inputStyle={{ width: "100%", height: "34px" }}
                     enableSearch={true}
                     inputProps={{
-                      name: "phone_no",
+                      name: "phone",
                       required: true,
                     }}
-                    value={formData.phone_no} // Control value directly
+                    value={formData.phone}
                     onChange={(value, countryData, e, formattedValue) =>
                       setFormData((prev) => ({
                         ...prev,
-                        phone_no: value, // Use raw value without hyphens
+                        phone: value,
                       }))
                     }
                   />
@@ -1108,9 +1108,9 @@ const Tournaments = () => {
               <div className="flex md:flex-row flex-col gap-4 md:items-center mt-5">
                 <h2 className="text-[18px]">FIDE ID (if any):</h2>
                 <input
-                  name="fidaID"
+                  name="fideId"
                   placeholder="FIDE ID"
-                  value={formData.fidaID}
+                  value={formData.fideId}
                   onChange={handleChange}
                   className="p-1 border border-[#d3d1d1] rounded"
                 />

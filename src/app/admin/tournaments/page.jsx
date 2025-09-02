@@ -184,13 +184,14 @@ const TournamentManagement = () => {
   };
 
   const editTournament = (tournament) => {
+    // Preserve existing dates when editing
     setNewTournament({
       name: tournament.name,
-      tournament_date: tournament.start_date || '',
+      tournament_date: tournament.start_date || tournament.tournament_date || '',
       registration_start_date: tournament.registration_start_date || '',
       registration_end_date: tournament.registration_end_date || '',
       flyer_image: tournament.flyer_image || '',
-      default_fee: tournament.default_fee || '500',
+      default_fee: tournament.default_fee || tournament.fee || '500',
       is_active: tournament.is_active === 1,
       categories: tournament.categories ? JSON.parse(tournament.categories) : []
     });
@@ -385,7 +386,7 @@ const TournamentManagement = () => {
 
       const requestBody = {
         status: tournament.status || 'upcoming',
-        is_active: tournament.is_active ? 0 : 1  // Fixed: toggle logic was inverted
+        is_active: tournament.is_active ? 0 : 1
       };
 
       console.log('📤 Sending request to:', `/api/admin/tournaments/${tournament.id}`);
@@ -577,7 +578,7 @@ const TournamentManagement = () => {
                   <button
                     type="button"
                     onClick={removeImage}
-                    className="mt-2 text-red-600 hover:text-red-800 text-sm"
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm underline"
                   >
                     Remove Image
                   </button>
@@ -703,32 +704,70 @@ const TournamentManagement = () => {
               {newTournament.categories.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="font-medium text-gray-900">Added Categories:</h4>
-                  {newTournament.categories.map((category) => (
-                    <div key={category.id} className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
-                      <div className="flex-1 grid grid-cols-5 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium text-blue-900">{category.name}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-700">₹{category.fee}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-700">{category.min_age || 'No min'}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-700">{category.max_age || 'No max'}</span>
-                        </div>
-                        <div>
-                          <span className="text-blue-700">{category.slots} slots</span>
-                        </div>
+                  {newTournament.categories.map((category, index) => (
+                    <div key={category.id} className="bg-blue-50 p-3 rounded-lg">
+                      <div className="grid grid-cols-6 gap-3 items-center">
+                        <input
+                          type="text"
+                          value={category.name}
+                          onChange={(e) => {
+                            const updatedCategories = [...newTournament.categories];
+                            updatedCategories[index].name = e.target.value;
+                            setNewTournament(prev => ({ ...prev, categories: updatedCategories }));
+                          }}
+                          className="p-2 border rounded text-sm"
+                        />
+                        <input
+                          type="number"
+                          value={category.fee}
+                          onChange={(e) => {
+                            const updatedCategories = [...newTournament.categories];
+                            updatedCategories[index].fee = e.target.value;
+                            setNewTournament(prev => ({ ...prev, categories: updatedCategories }));
+                          }}
+                          className="p-2 border rounded text-sm"
+                        />
+                        <input
+                          type="number"
+                          value={category.min_age}
+                          onChange={(e) => {
+                            const updatedCategories = [...newTournament.categories];
+                            updatedCategories[index].min_age = e.target.value;
+                            setNewTournament(prev => ({ ...prev, categories: updatedCategories }));
+                          }}
+                          className="p-2 border rounded text-sm"
+                          placeholder="Min age"
+                        />
+                        <input
+                          type="number"
+                          value={category.max_age}
+                          onChange={(e) => {
+                            const updatedCategories = [...newTournament.categories];
+                            updatedCategories[index].max_age = e.target.value;
+                            setNewTournament(prev => ({ ...prev, categories: updatedCategories }));
+                          }}
+                          className="p-2 border rounded text-sm"
+                          placeholder="Max age"
+                        />
+                        <input
+                          type="number"
+                          value={category.slots}
+                          onChange={(e) => {
+                            const updatedCategories = [...newTournament.categories];
+                            updatedCategories[index].slots = e.target.value;
+                            setNewTournament(prev => ({ ...prev, categories: updatedCategories }));
+                          }}
+                          className="p-2 border rounded text-sm"
+                          placeholder="Slots"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeCategory(category.id)}
+                          className="text-red-600 hover:text-red-800 font-medium text-sm"
+                        >
+                          Remove
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeCategory(category.id)}
-                        className="ml-3 text-red-600 hover:text-red-800 font-medium text-sm"
-                      >
-                        Remove
-                      </button>
                     </div>
                   ))}
                 </div>

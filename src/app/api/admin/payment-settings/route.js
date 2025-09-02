@@ -1,34 +1,35 @@
 import { NextResponse } from 'next/server';
 
 // GET - Fetch payment settings
-export async function GET() {
+export async function GET(request) {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
-    
-    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
-    
-    let paymentSettings = {
-      payment_mode: 'razorpay',
-      razorpay_key_id: 'rzp_live_z71oXRZ0avccLv',
-      razorpay_key_secret: 'uNuvlB1ovlLeGTUmyBQi6qPU',
-      razorpay_webhook_secret: '',
-      test_mode: false
-    };
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    if (settings && settings.payment_settings) {
-      try {
-        const storedSettings = typeof settings.payment_settings === 'string' 
-          ? JSON.parse(settings.payment_settings) 
-          : settings.payment_settings;
-        
-        paymentSettings = { ...paymentSettings, ...storedSettings };
-      } catch (e) {
-        console.error('Error parsing payment settings:', e);
-      }
-    }
+    // Get payment settings
+    const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['payment_config']);
     
-    return NextResponse.json(paymentSettings);
+    if (settings && settings.setting_value) {
+      const paymentConfig = JSON.parse(settings.setting_value);
+      
+      // Return settings with masked secrets for security
+      return NextResponse.json({
+        payment_mode: paymentConfig.payment_mode || 'razorpay',
+        razorpay_key_id: paymentConfig.razorpay_key_id || '',
+        razorpay_key_secret: paymentConfig.razorpay_key_secret ? '••••••••' : '',
+        razorpay_webhook_secret: paymentConfig.razorpay_webhook_secret ? '••••••••' : '',
+        test_mode: paymentConfig.test_mode || false
+      });
+    }
+
+    // Return default settings
+    return NextResponse.json({
+      payment_mode: 'razorpay',
+      razorpay_key_id: '',
+      razorpay_key_secret: '',
+      razorpay_webhook_secret: '',
+      test_mode: true // Default to test mode for safety
+    });
 
   } catch (error) {
     console.error('Error fetching payment settings:', error);
@@ -43,52 +44,59 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { payment_mode, razorpay_key_id, razorpay_key_secret, razorpay_webhook_secret, test_mode } = body;
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Validate required fields
-    if (!razorpay_key_id || !razorpay_key_secret) {
+    if (!body.razorpay_key_id) {
       return NextResponse.json(
-        { error: 'Razorpay Key ID and Secret are required' },
+        { error: 'Razorpay Key ID is required' },
         { status: 400 }
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Get existing settings to preserve secrets if not updated
+    let existingConfig = {};
+    const existing = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['payment_config']);
+    if (existing && existing.setting_value) {
+      existingConfig = JSON.parse(existing.setting_value);
+    }
 
-    const paymentSettings = {
-      payment_mode: payment_mode || 'razorpay',
-      razorpay_key_id,
-      razorpay_key_secret,
-      razorpay_webhook_secret: razorpay_webhook_secret || '',
-      test_mode: test_mode || false
+    // Prepare new config
+    const newConfig = {
+      payment_mode: body.payment_mode || 'razorpay',
+      razorpay_key_id: body.razorpay_key_id,
+      razorpay_key_secret: body.razorpay_key_secret === '••••••••' ? 
+        existingConfig.razorpay_key_secret : body.razorpay_key_secret,
+      razorpay_webhook_secret: body.razorpay_webhook_secret === '••••••••' ? 
+        existingConfig.razorpay_webhook_secret : body.razorpay_webhook_secret,
+      test_mode: body.test_mode || false,
+      updated_at: new Date().toISOString()
     };
 
-    // Check if settings exist
-    const existing = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
-
+    // Update or insert settings
     if (existing) {
-      // Update existing settings
-      db.prepare(`
-        UPDATE admin_settings
-        SET payment_settings = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        JSON.stringify(paymentSettings),
-        existing.id
+      await db.run(
+        'UPDATE admin_settings SET setting_value = ?, updated_at = ? WHERE setting_key = ?',
+        [JSON.stringify(newConfig), new Date().toISOString(), 'payment_config']
       );
     } else {
-      // Insert new settings
-      db.prepare(`
-        INSERT INTO admin_settings (payment_settings)
-        VALUES (?)
-      `).run(JSON.stringify(paymentSettings));
+      await db.run(
+        'INSERT INTO admin_settings (setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, ?)',
+        ['payment_config', JSON.stringify(newConfig), new Date().toISOString(), new Date().toISOString()]
+      );
     }
+
+    console.log('✅ Payment settings updated:', {
+      payment_mode: newConfig.payment_mode,
+      test_mode: newConfig.test_mode,
+      has_key_id: !!newConfig.razorpay_key_id,
+      has_secret: !!newConfig.razorpay_key_secret
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Payment settings updated successfully',
-      settings: paymentSettings
+      message: 'Payment settings updated successfully'
     });
 
   } catch (error) {

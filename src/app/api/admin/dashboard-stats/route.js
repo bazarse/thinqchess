@@ -6,51 +6,72 @@ export async function GET() {
     const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
 
-    // Get total registrations (all registrations, not just completed)
-    const totalRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations') || { count: 0 };
+    // Get stats with proper error handling
+    let totalRegistrations = { count: 0 };
+    let totalBlogs = { count: 0 };
+    let publishedBlogs = { count: 0 };
+    let totalGalleryImages = { count: 0 };
+    let totalDiscountCodes = { count: 0 };
+    let activeDiscountCodes = { count: 0 };
+    let pendingDemos = { count: 0 };
+    let pendingDemoRequests = [];
+    let totalRevenue = { total: 0 };
+    let completedRevenue = { total: 0 };
+    let registrationsByType = [];
 
-    // Get total blogs
-    const totalBlogs = await db.get('SELECT COUNT(*) as count FROM blogs') || { count: 0 };
+    try {
+      totalRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations') || { count: 0 };
+    } catch (e) { console.log('No tournament_registrations table'); }
 
-    // Get published blogs
-    const publishedBlogs = await db.get('SELECT COUNT(*) as count FROM blogs WHERE status = ?', ['published']) || { count: 0 };
+    try {
+      totalBlogs = await db.get('SELECT COUNT(*) as count FROM blogs') || { count: 0 };
+    } catch (e) { console.log('No blogs table'); }
 
-    // Get total gallery images
-    const totalGalleryImages = await db.get('SELECT COUNT(*) as count FROM gallery_images') || { count: 0 };
+    try {
+      publishedBlogs = await db.get('SELECT COUNT(*) as count FROM blogs WHERE status = ?', ['published']) || { count: 0 };
+    } catch (e) { console.log('No published blogs'); }
 
-    // Get total discount codes
-    const totalDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes') || { count: 0 };
+    try {
+      totalGalleryImages = await db.get('SELECT COUNT(*) as count FROM gallery_images') || { count: 0 };
+    } catch (e) { console.log('No gallery_images table'); }
 
-    // Get active discount codes
-    const activeDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes WHERE is_active = 1') || { count: 0 };
+    try {
+      totalDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes') || { count: 0 };
+    } catch (e) { console.log('No discount_codes table'); }
 
-    // Get pending demo requests count
-    const pendingDemos = await db.get('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?', ['pending']) || { count: 0 };
+    try {
+      activeDiscountCodes = await db.get('SELECT COUNT(*) as count FROM discount_codes WHERE is_active = 1') || { count: 0 };
+    } catch (e) { console.log('No active discount codes'); }
 
-    // Get pending demo requests (last 5)
-    const pendingDemoRequests = await db.all(`
-      SELECT parent_name, child_name, email, age, message, created_at
-      FROM demo_requests
-      WHERE status = ?
-      ORDER BY created_at DESC
-      LIMIT 5
-    `, ['pending']) || [];
+    try {
+      pendingDemos = await db.get('SELECT COUNT(*) as count FROM demo_requests WHERE status = ?', ['pending']) || { count: 0 };
+    } catch (e) { console.log('No demo_requests table'); }
 
-    // Calculate revenue (all payments - both completed and pending)
-    const totalRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE amount_paid > 0') || { total: 0 };
-    
-    // Also get completed revenue separately for comparison
-    const completedRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { total: 0 };
+    try {
+      pendingDemoRequests = await db.all(`
+        SELECT parent_name, child_name, email, age, message, created_at
+        FROM demo_requests
+        WHERE status = ?
+        ORDER BY created_at DESC
+        LIMIT 5
+      `, ['pending']) || [];
+    } catch (e) { console.log('No pending demo requests'); }
 
-    // Get completed registrations count
-    const completedRegistrations = await db.get('SELECT COUNT(*) as count FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { count: 0 };
+    try {
+      totalRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE amount_paid > 0') || { total: 0 };
+    } catch (e) { console.log('No revenue data'); }
 
-    // Get registration stats by type
-    const registrationsByType = await db.all(`
-      SELECT type, COUNT(*) as count
-      FROM tournament_registrations
-      GROUP BY type
-    `) || [];
+    try {
+      completedRevenue = await db.get('SELECT COALESCE(SUM(amount_paid), 0) as total FROM tournament_registrations WHERE payment_status = ?', ['completed']) || { total: 0 };
+    } catch (e) { console.log('No completed revenue data'); }
+
+    try {
+      registrationsByType = await db.all(`
+        SELECT type, COUNT(*) as count
+        FROM tournament_registrations
+        GROUP BY type
+      `) || [];
+    } catch (e) { console.log('No registration type data'); }
     
     return NextResponse.json({
       success: true,

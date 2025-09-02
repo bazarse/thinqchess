@@ -6,10 +6,10 @@ export async function GET(request) {
     const placeId = searchParams.get('placeId') || 'ChIJ-_jBcPtrrjsRvd658JobDpM'; // ThinQ Chess JP Nagar
     
     // Get Google API key from admin settings
-    const { getDB } = require('../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
     
-    let googleApiKey = 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w'; // Default API key
+    let googleApiKey = process.env.GOOGLE_PLACES_API_KEY || ''; // Use environment variable
     
     try {
       const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
