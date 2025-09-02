@@ -9,37 +9,46 @@ export async function GET(request) {
     const SimpleDatabase = (await import('../../../../lib/simple-db.js')).default;
     const db = new SimpleDatabase();
     
-    let googleApiKey = process.env.GOOGLE_PLACES_API_KEY || ''; // Use environment variable
+    let googleApiKey = '';
+    let reviewsEnabled = true;
     
     try {
-      const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
+      const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['google_config']);
       
-      if (settings && settings.google_settings) {
-        const googleSettings = typeof settings.google_settings === 'string' 
-          ? JSON.parse(settings.google_settings) 
-          : settings.google_settings;
+      if (settings && settings.setting_value) {
+        const googleConfig = JSON.parse(settings.setting_value);
         
-        if (googleSettings.places_api_key) {
-          googleApiKey = googleSettings.places_api_key;
-        }
+        googleApiKey = googleConfig.places_api_key || '';
+        reviewsEnabled = googleConfig.reviews_enabled !== false;
       }
     } catch (e) {
       console.error('Error fetching Google settings:', e);
-      // Use default API key
+    }
+    
+    // Check if reviews are disabled
+    if (!reviewsEnabled) {
+      return NextResponse.json({
+        success: false,
+        source: 'disabled',
+        reviews: [],
+        rating: 0,
+        total_reviews: 0,
+        error: 'Google Reviews are disabled in admin settings'
+      });
     }
     
     console.log('🔑 Using Google API key:', googleApiKey ? googleApiKey.substring(0, 10) + '...' : 'Not found');
 
-    // Always use the API key (default or from settings)
+    // Check if API key is configured
     if (!googleApiKey || googleApiKey.length < 10) {
-      console.log('❌ Invalid Google API key');
+      console.log('❌ No Google API key configured');
       return NextResponse.json({
         success: false,
-        source: 'invalid_api_key',
+        source: 'no_api_key',
         reviews: [],
         rating: 0,
         total_reviews: 0,
-        error: 'Invalid Google API key. Please check admin settings.'
+        error: 'Google Places API key not configured. Please add it in admin settings.'
       });
     }
 

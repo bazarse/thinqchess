@@ -369,6 +369,99 @@ const AdminSettings = () => {
         </form>
       </div>
 
+      {/* Google API Settings Form */}
+      <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">🌍 Google API Settings</h2>
+        
+        <form onSubmit={handleGoogleSubmit} className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-lg font-medium text-blue-900 mb-2">Google Places API</h3>
+            <p className="text-sm text-blue-700">
+              Required for displaying Google Reviews on the website
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Google Places API Key
+            </label>
+            <input
+              type="password"
+              name="places_api_key"
+              value={googleSettings.places_api_key}
+              onChange={handleGoogleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+              placeholder="Enter Google Places API key"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Get your API key from Google Cloud Console
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              JP Nagar Place ID
+            </label>
+            <input
+              type="text"
+              name="place_id_jp_nagar"
+              value={googleSettings.place_id_jp_nagar}
+              onChange={handleGoogleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+              placeholder="ChIJ..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Akshaya Nagar Place ID
+            </label>
+            <input
+              type="text"
+              name="place_id_akshayanagar"
+              value={googleSettings.place_id_akshayanagar}
+              onChange={handleGoogleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B3AA0] focus:border-transparent"
+              placeholder="ChIJ..."
+            />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="reviews_enabled"
+              checked={googleSettings.reviews_enabled}
+              onChange={handleGoogleChange}
+              className="h-4 w-4 text-[#2B3AA0] focus:ring-[#2B3AA0] border-gray-300 rounded"
+            />
+            <label className="ml-2 block text-sm text-gray-900">
+              Enable Google Reviews on website
+            </label>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">📝 Setup Instructions:</h4>
+            <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+              <li>Go to Google Cloud Console</li>
+              <li>Enable Places API</li>
+              <li>Create API key with Places API access</li>
+              <li>Add API key above</li>
+              <li>Reviews will appear automatically</li>
+            </ol>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-[#2B3AA0] text-white rounded-lg hover:bg-[#1e2a70] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save Google Settings'}
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* Account Settings Form */}
       <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">👤 Account Settings</h2>

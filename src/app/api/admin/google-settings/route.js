@@ -1,33 +1,33 @@
 import { NextResponse } from 'next/server';
 
 // GET - Fetch Google settings
-export async function GET() {
+export async function GET(request) {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
-    
-    const settings = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
-    
-    let googleSettings = {
-      places_api_key: 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w',
-      place_id_jp_nagar: 'ChIJ-_jBcPtrrjsRvd658JobDpM',
-      place_id_akshayanagar: 'ChIJkTzF3mjGa0YRQbtfSH3hBJ0',
-      reviews_enabled: true
-    };
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    if (settings && settings.google_settings) {
-      try {
-        const storedSettings = typeof settings.google_settings === 'string' 
-          ? JSON.parse(settings.google_settings) 
-          : settings.google_settings;
-        
-        googleSettings = { ...googleSettings, ...storedSettings };
-      } catch (e) {
-        console.error('Error parsing Google settings:', e);
-      }
-    }
+    // Get Google settings
+    const settings = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['google_config']);
     
-    return NextResponse.json(googleSettings);
+    if (settings && settings.setting_value) {
+      const googleConfig = JSON.parse(settings.setting_value);
+      
+      // Return settings with masked API key for security
+      return NextResponse.json({
+        places_api_key: googleConfig.places_api_key ? '••••••••' : '',
+        place_id_jp_nagar: googleConfig.place_id_jp_nagar || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+        place_id_akshayanagar: googleConfig.place_id_akshayanagar || '',
+        reviews_enabled: googleConfig.reviews_enabled !== false
+      });
+    }
+
+    // Return default settings
+    return NextResponse.json({
+      places_api_key: '',
+      place_id_jp_nagar: 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+      place_id_akshayanagar: '',
+      reviews_enabled: true
+    });
 
   } catch (error) {
     console.error('Error fetching Google settings:', error);
@@ -42,43 +42,48 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { places_api_key, place_id_jp_nagar, place_id_akshayanagar, reviews_enabled } = body;
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    // Get existing settings to preserve API key if not updated
+    let existingConfig = {};
+    const existing = await db.get('SELECT * FROM admin_settings WHERE setting_key = ?', ['google_config']);
+    if (existing && existing.setting_value) {
+      existingConfig = JSON.parse(existing.setting_value);
+    }
 
-    const googleSettings = {
-      places_api_key: places_api_key || 'AIzaSyDJoiBFa6DnFf7V9NUBucaaympbeoLps2w',
-      place_id_jp_nagar: place_id_jp_nagar || 'ChIJ-_jBcPtrrjsRvd658JobDpM',
-      place_id_akshayanagar: place_id_akshayanagar || 'ChIJkTzF3mjGa0YRQbtfSH3hBJ0',
-      reviews_enabled: reviews_enabled !== undefined ? reviews_enabled : true
+    // Prepare new config
+    const newConfig = {
+      places_api_key: body.places_api_key === '••••••••' ? 
+        existingConfig.places_api_key : body.places_api_key,
+      place_id_jp_nagar: body.place_id_jp_nagar || 'ChXdvpvpgI0jaOm_lM-Zf9XXYjM',
+      place_id_akshayanagar: body.place_id_akshayanagar || '',
+      reviews_enabled: body.reviews_enabled !== false,
+      updated_at: new Date().toISOString()
     };
 
-    // Check if settings exist
-    const existing = db.prepare('SELECT * FROM admin_settings ORDER BY id DESC LIMIT 1').get();
-
+    // Update or insert settings
     if (existing) {
-      // Update existing settings
-      db.prepare(`
-        UPDATE admin_settings
-        SET google_settings = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        JSON.stringify(googleSettings),
-        existing.id
+      await db.run(
+        'UPDATE admin_settings SET setting_value = ?, updated_at = ? WHERE setting_key = ?',
+        [JSON.stringify(newConfig), new Date().toISOString(), 'google_config']
       );
     } else {
-      // Insert new settings
-      db.prepare(`
-        INSERT INTO admin_settings (google_settings)
-        VALUES (?)
-      `).run(JSON.stringify(googleSettings));
+      await db.run(
+        'INSERT INTO admin_settings (setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, ?)',
+        ['google_config', JSON.stringify(newConfig), new Date().toISOString(), new Date().toISOString()]
+      );
     }
+
+    console.log('✅ Google settings updated:', {
+      has_api_key: !!newConfig.places_api_key,
+      reviews_enabled: newConfig.reviews_enabled,
+      jp_nagar_place_id: newConfig.place_id_jp_nagar
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Google settings updated successfully',
-      settings: googleSettings
+      message: 'Google settings updated successfully'
     });
 
   } catch (error) {
