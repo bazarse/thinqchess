@@ -3,10 +3,10 @@ import { NextResponse } from 'next/server';
 // GET - Fetch all discount codes
 export async function GET() {
   try {
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
     
-    const discountCodes = await db.prepare('SELECT * FROM discount_codes ORDER BY created_at DESC').all();
+    const discountCodes = await db.all('SELECT * FROM discount_codes ORDER BY created_at DESC');
     
     return NextResponse.json({
       success: true,
@@ -50,11 +50,11 @@ export async function POST(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if code already exists
-    const existingCode = db.prepare('SELECT id FROM discount_codes WHERE code = ?').get(code.toUpperCase());
+    const existingCode = await db.get('SELECT id FROM discount_codes WHERE code = ?', [code.toUpperCase()]);
     if (existingCode) {
       return NextResponse.json(
         { error: 'Discount code already exists' },
@@ -63,13 +63,11 @@ export async function POST(request) {
     }
 
     // Insert new discount code
-    const insertStmt = db.prepare(`
+    const result = await db.run(`
       INSERT INTO discount_codes (
         code, discount_percent, discount_amount, discount_type, usage_limit, is_active, code_type, prefix, email_domain, email_prefix, match_type
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const result = insertStmt.run(
+    `, [
       code.toUpperCase(),
       discount_type === 'percentage' ? parseFloat(discount_percent) : 0,
       discount_type === 'amount' ? parseFloat(discount_amount) : 0,
@@ -81,10 +79,10 @@ export async function POST(request) {
       email_domain || null,
       email_prefix || null,
       match_type || 'domain'
-    );
+    ]);
 
     // Get the created discount code
-    const newDiscountCode = db.prepare('SELECT * FROM discount_codes WHERE id = ?').get(result.lastInsertRowid);
+    const newDiscountCode = await db.get('SELECT * FROM discount_codes WHERE id = ?', [result.lastInsertRowid]);
 
     return NextResponse.json({
       success: true,
@@ -114,11 +112,11 @@ export async function PUT(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if discount code exists
-    const existing = db.prepare('SELECT * FROM discount_codes WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM discount_codes WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Discount code not found' },
@@ -128,7 +126,7 @@ export async function PUT(request) {
 
     // Check if code already exists for a different discount code
     if (code && code.toUpperCase() !== existing.code) {
-      const codeExists = db.prepare('SELECT id FROM discount_codes WHERE code = ? AND id != ?').get(code.toUpperCase(), id);
+      const codeExists = await db.get('SELECT id FROM discount_codes WHERE code = ? AND id != ?', [code.toUpperCase(), id]);
       if (codeExists) {
         return NextResponse.json(
           { error: 'Discount code already exists' },
@@ -138,14 +136,12 @@ export async function PUT(request) {
     }
 
     // Update discount code
-    const updateStmt = db.prepare(`
+    await db.run(`
       UPDATE discount_codes 
       SET code = ?, discount_percent = ?, discount_amount = ?, discount_type = ?, usage_limit = ?, is_active = ?, 
           code_type = ?, prefix = ?, email_domain = ?
       WHERE id = ?
-    `);
-
-    updateStmt.run(
+    `, [
       code ? code.toUpperCase() : existing.code,
       discount_percent !== undefined ? parseFloat(discount_percent) : existing.discount_percent,
       discount_amount !== undefined ? parseFloat(discount_amount) : existing.discount_amount,
@@ -156,10 +152,10 @@ export async function PUT(request) {
       prefix !== undefined ? prefix : existing.prefix,
       email_domain !== undefined ? email_domain : existing.email_domain,
       id
-    );
+    ]);
 
     // Get updated discount code
-    const updatedDiscountCode = db.prepare('SELECT * FROM discount_codes WHERE id = ?').get(id);
+    const updatedDiscountCode = await db.get('SELECT * FROM discount_codes WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
@@ -189,11 +185,11 @@ export async function DELETE(request) {
       );
     }
 
-    const { getDB } = require('../../../../../lib/database.js');
-    const db = getDB();
+    const SimpleDatabase = (await import('../../../../../lib/simple-db.js')).default;
+    const db = new SimpleDatabase();
 
     // Check if discount code exists
-    const existing = db.prepare('SELECT * FROM discount_codes WHERE id = ?').get(id);
+    const existing = await db.get('SELECT * FROM discount_codes WHERE id = ?', [id]);
     if (!existing) {
       return NextResponse.json(
         { error: 'Discount code not found' },
@@ -202,7 +198,7 @@ export async function DELETE(request) {
     }
 
     // Delete discount code
-    db.prepare('DELETE FROM discount_codes WHERE id = ?').run(id);
+    await db.run('DELETE FROM discount_codes WHERE id = ?', [id]);
 
     return NextResponse.json({
       success: true,
