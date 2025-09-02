@@ -361,7 +361,13 @@ const BlogManagement = () => {
                         </span>
                         <span>Created: {blog.created_at ? new Date(blog.created_at).toLocaleDateString() : 'Unknown'}</span>
                         {blog.updated_at && blog.updated_at !== blog.created_at && (
-                          <span>Updated: {new Date(blog.updated_at).toLocaleDateString()}</span>
+                          <span>Updated: {(() => {
+                            try {
+                              return new Date(blog.updated_at).toLocaleDateString();
+                            } catch (e) {
+                              return 'Recently';
+                            }
+                          })()}</span>
                         )}
                       </div>
                     </div>
