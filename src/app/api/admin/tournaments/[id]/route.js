@@ -95,20 +95,20 @@ export async function PATCH(request, { params }) {
     // If activating this tournament, deactivate all others first
     if (isActiveValue === 1 && isActiveChanged) {
       console.log('🔄 Deactivating other tournaments first...');
-      const deactivateResult = await db.run(`
+      const deactivateResult = db.prepare(`
         UPDATE tournaments
         SET is_active = 0, updated_at = ?
         WHERE id != ? AND is_active = 1
-      `, [new Date().toISOString(), tournamentId]);
+      `).run(new Date().toISOString(), tournamentId);
 
       console.log('✅ Deactivated other tournaments:', deactivateResult);
     }
 
-    const result = await db.run(`
+    const result = db.prepare(`
       UPDATE tournaments
       SET status = ?, is_active = ?, updated_at = ?
       WHERE id = ?
-    `, [body.status, isActiveValue, new Date().toISOString(), tournamentId]);
+    `).run(body.status, isActiveValue, new Date().toISOString(), tournamentId);
 
     console.log('✅ Tournament update result:', result);
 
